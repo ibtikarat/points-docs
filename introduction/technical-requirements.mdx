@@ -1,0 +1,14 @@
+---
+title: 'Technical Requirements'
+description: 'System requirements for Points integration'
+---
+
+<Note>
+  Full content coming soon. The bullets below are the load-bearing constraints; deeper rationale is in [Security](/authentication/security).
+</Note>
+
+- **HTTPS only** — all Points endpoints require HTTPS with TLS 1.2 or higher.
+- **Webhook endpoint** — must be a publicly reachable HTTPS URL that responds 2xx within 10 seconds.
+- **JSON** — all request and response bodies use `application/json`.
+- **SDKs** — no official SDK yet; any language with a modern HTTP client works (examples in Node.js, Python, PHP, cURL in the [Quickstart](/introduction/quickstart)).
+- **IP allow-listing** — optional, available on request.

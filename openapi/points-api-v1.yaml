@@ -1,0 +1,738 @@
+openapi: 3.0.3
+info:
+  title: Points API
+  version: 1.0.0
+  description: >
+    OpenAPI definition for the `/api/v1` endpoints defined in `routes/api_v1.php`.
+servers:
+  - url: https://api.example.com/api
+    description: Production server (replace with the correct host)
+  - url: http://localhost/api
+    description: Local development server
+tags:
+  - name: Orders
+    description: Operations for creating and managing orders
+  - name: Webhooks
+    description: CRUD operations for merchant webhooks
+paths:
+  /v1/orders/checkout/{publicKey}:
+    post:
+      tags:
+        - Orders
+      summary: Begin checkout for a replacing order
+      description: >
+        Starts a checkout session for a replacing order using the provided public key.
+        This endpoint does **not** require the `x-api-key` header.
+      operationId: checkoutOrder
+      security: []
+      parameters:
+        - name: publicKey
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Public key that identifies the merchant.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      responses:
+        '200':
+          description: Checkout URL generated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutResponse'
+        '400':
+          description: Validation failed or the API key is invalid/inactive.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/orders/{orderUuid}:
+    get:
+      tags:
+        - Orders
+      summary: Retrieve an order
+      description: Fetch a single order by its UUID for the authenticated merchant.
+      operationId: getOrder
+      parameters:
+        - $ref: '#/components/parameters/orderUuid'
+      responses:
+        '200':
+          description: Order retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '404':
+          description: Order not found for the authenticated merchant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/orders/earning:
+    post:
+      tags:
+        - Orders
+      summary: Create an earning order
+      description: >
+        Creates an earning order for the authenticated merchant. The request is serialized within a distributed lock to avoid duplicates.
+      operationId: createEarningOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EarningOrderRequest'
+      responses:
+        '200':
+          description: Order created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '403':
+          description: Merchant is not allowed to create earning orders.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too many concurrent requests for the same merchant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/orders/{orderUuid}/complete:
+    get:
+      tags:
+        - Orders
+      summary: Complete an order checkout
+      description: Marks the order as fully paid, if possible.
+      operationId: completeOrder
+      parameters:
+        - $ref: '#/components/parameters/orderUuid'
+      responses:
+        '200':
+          description: Order completed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Order cannot be completed (already paid or invalid state).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Order not found for the authenticated merchant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/orders/{orderUuid}/authorize:
+    post:
+      tags:
+        - Orders
+      summary: Authorize an order
+      description: Updates the order status to authorized, if allowed.
+      operationId: authorizeOrder
+      parameters:
+        - $ref: '#/components/parameters/orderUuid'
+      responses:
+        '200':
+          description: Order authorized successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Order cannot be authorized (already refunded).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Order not found for the authenticated merchant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/orders/{orderUuid}/capture:
+    post:
+      tags:
+        - Orders
+      summary: Capture an order
+      description: Updates the order status to captured, if allowed.
+      operationId: captureOrder
+      parameters:
+        - $ref: '#/components/parameters/orderUuid'
+      responses:
+        '200':
+          description: Order captured successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Order cannot be captured (already refunded).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Order not found for the authenticated merchant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/orders/{orderUuid}/cancel:
+    post:
+      tags:
+        - Orders
+      summary: Cancel an order
+      description: Cancels an order and triggers webhook notifications.
+      operationId: cancelOrder
+      parameters:
+        - $ref: '#/components/parameters/orderUuid'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelRequest'
+      responses:
+        '200':
+          description: Order cancelled successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Order cannot be cancelled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Order not found for the authenticated merchant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/orders/{orderUuid}/refund:
+    post:
+      tags:
+        - Orders
+      summary: Refund an order
+      description: Issues a full or partial refund and returns points to the customer.
+      operationId: refundOrder
+      parameters:
+        - $ref: '#/components/parameters/orderUuid'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundRequest'
+      responses:
+        '200':
+          description: Order refunded successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Refund not allowed (outside allowed window, not captured, settled, etc.).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Order not found for the authenticated merchant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/webhooks:
+    get:
+      tags:
+        - Webhooks
+      summary: List webhooks
+      description: Returns a paginated list of webhooks for the authenticated merchant.
+      operationId: listWebhooks
+      parameters:
+        - name: per_page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+          description: Number of items to return per page (default 15).
+      responses:
+        '200':
+          description: Webhooks retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookCollectionResponse'
+    post:
+      tags:
+        - Webhooks
+      summary: Create a webhook
+      description: Registers a new webhook for the authenticated merchant.
+      operationId: createWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookRequest'
+      responses:
+        '200':
+          description: Webhook created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookResponse'
+        '400':
+          description: Validation failed or webhook already exists for this URL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/webhooks/{webhookUuid}:
+    get:
+      tags:
+        - Webhooks
+      summary: Retrieve a webhook
+      description: Fetch a single webhook by UUID for the authenticated merchant.
+      operationId: getWebhook
+      parameters:
+        - $ref: '#/components/parameters/webhookUuid'
+      responses:
+        '200':
+          description: Webhook retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookResponse'
+        '404':
+          description: Webhook not found for the authenticated merchant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Webhooks
+      summary: Update a webhook
+      description: >
+        Updates the name and/or URL of a webhook. All provided fields replace existing values.
+      operationId: updateWebhook
+      parameters:
+        - $ref: '#/components/parameters/webhookUuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookUpdateRequest'
+      responses:
+        '200':
+          description: Webhook updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookResponse'
+        '404':
+          description: Webhook not found for the authenticated merchant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags:
+        - Webhooks
+      summary: Partially update a webhook
+      description: >
+        Provides a partial update for a webhook. Only supplied fields are changed.
+      operationId: patchWebhook
+      parameters:
+        - $ref: '#/components/parameters/webhookUuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookUpdateRequest'
+      responses:
+        '200':
+          description: Webhook updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookResponse'
+        '404':
+          description: Webhook not found for the authenticated merchant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Webhooks
+      summary: Delete a webhook
+      description: Deletes a webhook for the authenticated merchant.
+      operationId: deleteWebhook
+      parameters:
+        - $ref: '#/components/parameters/webhookUuid'
+      responses:
+        '200':
+          description: Webhook deleted successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyResponse'
+        '404':
+          description: Webhook not found for the authenticated merchant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+  parameters:
+    orderUuid:
+      name: orderUuid
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order UUID.
+    webhookUuid:
+      name: webhookUuid
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Webhook UUID.
+  schemas:
+    ApiMetadata:
+      type: object
+      required:
+        - status
+        - message
+        - appended_data
+      properties:
+        status:
+          type: boolean
+          example: true
+        message:
+          type: string
+          nullable: true
+          example: ''
+        appended_data:
+          type: object
+          additionalProperties: true
+          example: {}
+    CheckoutRequest:
+      type: object
+      required:
+        - total_price
+        - products
+        - order_number
+      properties:
+        phone_number:
+          type: string
+          nullable: true
+          description: Customer phone number (KSA format).
+          example: "512345678"
+        total_price:
+          type: number
+          format: float
+          minimum: 0
+          description: Checkout amount (SAR).
+          example: 150.75
+        products:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ProductLine'
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Optional metadata that will be stored with the order.
+          example:
+            source: mobile_app
+            notes: Deliver ASAP
+        order_number:
+          type: string
+          description: Merchant order reference.
+          example: ORD-2024-0001
+        callback_url:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to redirect the customer after checkout completion.
+          example: https://merchant.example.com/callback
+    CheckoutResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiMetadata'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: object
+              required:
+                - checkout_url
+              properties:
+                checkout_url:
+                  type: string
+                  format: uri
+                  example: https://pay.points.com/session/abcd1234
+    ProductLine:
+      type: object
+      required:
+        - product_name
+        - product_price
+        - quantity
+      properties:
+        product_name:
+          type: string
+          example: Cappuccino
+        product_price:
+          type: number
+          format: float
+          minimum: 0
+          example: 18.5
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+    EarningOrderRequest:
+      type: object
+      required:
+        - phone_number
+        - total_price
+        - products
+        - order_number
+      properties:
+        phone_number:
+          type: string
+          description: Customer phone number (KSA format).
+          example: "512345678"
+        total_price:
+          type: number
+          format: float
+          minimum: 0
+          description: Purchase amount (SAR).
+          example: 115.0
+        products:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ProductLine'
+        order_number:
+          type: string
+          description: Merchant order reference.
+          example: SALE-2024-0021
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Optional metadata stored on the order.
+    CancelRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+          description: Reason provided for the cancellation.
+          example: Customer requested cancellation.
+    RefundRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: float
+          minimum: 0
+          description: >
+            Amount to refund. When omitted, the full captured amount is refunded.
+          example: 50.0
+        reason:
+          type: string
+          maxLength: 500
+          description: Explanation for the refund.
+          example: Item returned by customer.
+    OrderResource:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        uuid:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        reference_number:
+          type: string
+          nullable: true
+          example: REF-2024-001234
+        order_status:
+          type: string
+          example: approved
+        order_number:
+          type: string
+          example: ORD-2024-001234
+        type:
+          type: integer
+          description: |
+            Order type (1 = earning, 2 = replacing).
+          example: 1
+        total_price:
+          type: number
+          format: float
+          example: 150.5
+        total_points:
+          type: number
+          format: float
+          example: 1505
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+          example:
+            source: mobile_app
+        created_at:
+          type: string
+          format: date-time
+          example: 2024-12-23T10:00:00Z
+    OrderResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiMetadata'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/OrderResource'
+    WebhookBase:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        merchant_id:
+          type: integer
+          example: 123
+        name:
+          type: string
+          example: Order Notification
+        url:
+          type: string
+          format: uri
+          example: https://merchant.example.com/webhooks/orders
+        secret:
+          type: string
+          example: abc123def456
+        created_at:
+          type: string
+          format: date-time
+          example: 2024-12-23T10:00:00Z
+        updated_at:
+          type: string
+          format: date-time
+          example: 2024-12-23T15:30:00Z
+    WebhookResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiMetadata'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/WebhookBase'
+    WebhookCollectionResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiMetadata'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/WebhookBase'
+            links:
+              type: object
+              description: Pagination links generated by Laravel.
+              additionalProperties: true
+            meta:
+              type: object
+              description: Pagination metadata generated by Laravel.
+              additionalProperties: true
+    WebhookRequest:
+      type: object
+      required:
+        - name
+        - url
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          example: Order Notification
+        url:
+          type: string
+          format: uri
+          maxLength: 500
+          example: https://merchant.example.com/webhooks/orders
+    WebhookUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          example: Updated Webhook Name
+        url:
+          type: string
+          format: uri
+          maxLength: 500
+          example: https://merchant.example.com/webhooks/orders-v2
+      description: Provide at least one field when updating a webhook.
+      minProperties: 1
+    EmptyResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiMetadata'
+    ErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+        - appended_data
+      properties:
+        status:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Invalid or inactive API key
+        appended_data:
+          type: object
+          additionalProperties: true
+          example: {}
+security:
+  - ApiKeyAuth: []

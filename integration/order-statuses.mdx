@@ -1,0 +1,35 @@
+---
+title: 'Order Statuses'
+description: 'Complete enum reference for financial and shipping statuses'
+---
+
+## Financial status (`order_status`)
+
+| Value | Meaning |
+| --- | --- |
+| `new` | Order created, not yet settled |
+| `approved` | Order settled; points credited or redeemed |
+| `authorized` | Funds authorised, not yet captured |
+| `captured` | Authorised funds captured |
+| `cancelled` | Order cancelled |
+| `fully_refunded` | Entire amount refunded |
+| `partially_refunded` | Part of the amount refunded |
+
+See [Order lifecycle](/integration/order-lifecycle) for the state-machine transitions.
+
+## Shipping status
+
+For physical-goods orders, update via `POST /v1/orders/{uuid}/status`.
+
+| Value | Meaning |
+| --- | --- |
+| `new` | Order received, processing not started |
+| `license_in_progress` | Paperwork / licensing in progress |
+| `ready_shipping` | Packaged, handed to carrier |
+| `delivery_is_in_progress` | In transit |
+| `delivered` | Received by customer |
+| `cancelled` | Shipping cancelled (distinct from financial cancellation) |
+
+<Note>
+  Deeper guidance (recommended transitions, edge cases, customer-facing labels) coming soon.
+</Note>

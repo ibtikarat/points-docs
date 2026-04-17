@@ -1,0 +1,205 @@
+---
+title: 'Quickstart'
+description: 'Make your first Points API call in under 10 minutes'
+---
+
+This quickstart walks you through issuing your first successful Points API call — creating an **earning order** — in five short steps. By the end you will have awarded real loyalty points to a test customer.
+
+<Note>
+  If you do not yet have merchant credentials, [register at business.papp.sa](https://business.papp.sa) or email [support@papp.sa](mailto:support@papp.sa) to request sandbox access.
+</Note>
+
+## Prerequisites
+
+- A Points merchant account (sandbox or production)
+- A **Private API key** (see [API keys](/authentication/api-keys))
+- A terminal with `curl`, or any HTTP client (Postman, Insomnia, your backend)
+- A test customer phone number in KSA format (e.g. `512345678`)
+
+## Step 1 — Locate your API key
+
+Sign in to the [Points Business dashboard](https://business.papp.sa) and open **Settings → API Keys**. Copy the **Private key** — you will send it in the `x-api-key` header on every request.
+
+<Warning>
+  The **Private key** is a secret. Never expose it in client-side code, public repositories, or mobile app bundles.
+</Warning>
+
+## Step 2 — Confirm the base URL
+
+All v1 endpoints live under:
+
+```
+https://api.papp.sa/api/v1
+```
+
+Every authenticated request must include:
+
+| Header | Value |
+| --- | --- |
+| `x-api-key` | Your Private key |
+| `Content-Type` | `application/json` |
+| `Accept` | `application/json` |
+
+## Step 3 — Create an earning order
+
+The simplest integration point: award points for a completed purchase.
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://api.papp.sa/api/v1/orders/earning \
+  -H "x-api-key: $POINTS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "phone_number": "512345678",
+    "total_price": 115.00,
+    "order_number": "SALE-2024-0021",
+    "products": [
+      { "product_name": "Cappuccino", "product_price": 18.50, "quantity": 2 },
+      { "product_name": "Croissant",  "product_price": 39.00, "quantity": 2 }
+    ]
+  }'
+```
+
+```javascript Node.js
+const res = await fetch("https://api.papp.sa/api/v1/orders/earning", {
+  method: "POST",
+  headers: {
+    "x-api-key": process.env.POINTS_API_KEY,
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
+  body: JSON.stringify({
+    phone_number: "512345678",
+    total_price: 115.0,
+    order_number: "SALE-2024-0021",
+    products: [
+      { product_name: "Cappuccino", product_price: 18.5, quantity: 2 },
+      { product_name: "Croissant",  product_price: 39.0, quantity: 2 },
+    ],
+  }),
+});
+
+const data = await res.json();
+console.log(data);
+```
+
+```python Python
+import os, requests
+
+res = requests.post(
+    "https://api.papp.sa/api/v1/orders/earning",
+    headers={
+        "x-api-key": os.environ["POINTS_API_KEY"],
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    },
+    json={
+        "phone_number": "512345678",
+        "total_price": 115.00,
+        "order_number": "SALE-2024-0021",
+        "products": [
+            {"product_name": "Cappuccino", "product_price": 18.50, "quantity": 2},
+            {"product_name": "Croissant",  "product_price": 39.00, "quantity": 2},
+        ],
+    },
+)
+print(res.json())
+```
+
+```php PHP
+<?php
+$response = Http::withHeaders([
+    'x-api-key'    => env('POINTS_API_KEY'),
+    'Content-Type' => 'application/json',
+    'Accept'       => 'application/json',
+])->post('https://api.papp.sa/api/v1/orders/earning', [
+    'phone_number' => '512345678',
+    'total_price'  => 115.00,
+    'order_number' => 'SALE-2024-0021',
+    'products'     => [
+        ['product_name' => 'Cappuccino', 'product_price' => 18.50, 'quantity' => 2],
+        ['product_name' => 'Croissant',  'product_price' => 39.00, 'quantity' => 2],
+    ],
+]);
+
+return $response->json();
+```
+
+</CodeGroup>
+
+## Step 4 — Read the response
+
+A successful call returns the created order:
+
+```json
+{
+  "status": true,
+  "message": "",
+  "appended_data": {},
+  "data": {
+    "id": 42,
+    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+    "reference_number": "REF-2024-001234",
+    "order_status": "approved",
+    "order_number": "SALE-2024-0021",
+    "type": 1,
+    "total_price": 115.00,
+    "total_points": 1150,
+    "created_at": "2026-04-18T10:00:00Z"
+  }
+}
+```
+
+Points to notice:
+
+- `uuid` — the Points identifier. **Store this on your side**; you will use it for later operations (refund, cancel, lookup).
+- `order_status: "approved"` — the earning order is settled and points are credited.
+- `total_points` — the number of points awarded to the customer.
+- `type: 1` — indicates an **earning** order (`2` = replacing / redeem checkout).
+
+## Step 5 — Verify in the dashboard
+
+Open the [Points Business dashboard](https://business.papp.sa) → **Orders**. Your new order appears with `reference_number` matching the response above, and the customer balance has been credited.
+
+<Check>
+  That's it — you just awarded points through the API.
+</Check>
+
+## What to build next
+
+<CardGroup cols={2}>
+  <Card title="Set up webhooks" icon="bell" href="/webhooks/overview">
+    Receive real-time notifications when orders are approved, captured, cancelled, or refunded.
+  </Card>
+  <Card title="Full checkout flow" icon="cart-shopping" href="/integration/checkout-flow">
+    Let customers **redeem** points at your checkout, not just earn them.
+  </Card>
+  <Card title="Order lifecycle" icon="timeline" href="/integration/order-lifecycle">
+    Understand authorize → capture → refund and how each transition affects points.
+  </Card>
+  <Card title="API reference" icon="code" href="/api-reference">
+    Every endpoint, parameter, and response documented.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="400 — API key is required">
+    The `x-api-key` header is missing. Confirm your HTTP client is attaching it. Header names are case-insensitive but must be spelled exactly `x-api-key`.
+  </Accordion>
+  <Accordion title="400 — Invalid or inactive API key">
+    The key you sent does not match any active merchant key. Regenerate from the dashboard or confirm you copied the **Private** key (not the Public key).
+  </Accordion>
+  <Accordion title="403 — Merchant is not allowed to create earning orders">
+    Your merchant account is not enabled for earn-only. Contact [support@papp.sa](mailto:support@papp.sa) to enable it.
+  </Accordion>
+  <Accordion title="422 — Validation error">
+    One of the body fields failed validation. The response `message` field names the first failing rule. Common causes: missing `phone_number` for earning orders, empty `products` array, non-numeric `total_price`.
+  </Accordion>
+  <Accordion title="429 — Too many concurrent requests">
+    You sent another earning request for the same merchant before the previous one released its distributed lock. Retry after a short back-off; do not parallelise earning calls for the same merchant.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Mintlify cache
+.mintlify/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Internal files (do not publish)
+_discovery-report.md
+_matajer-analysis.md
+_swagger-gaps.md
+_swagger-vs-code.md
+
+# Backup files
+*.backup

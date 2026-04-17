@@ -1,0 +1,98 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Points",
+  "description": "Points API - Saudi Arabia's unified loyalty rewards platform",
+  "colors": {
+    "primary": "#0B1F3F",
+    "light": "#4A90E2",
+    "dark": "#0B1F3F"
+  },
+  "favicon": "/favicon.png",
+  "navigation": {
+    "versions": [
+      {
+        "version": "v1",
+        "tabs": [
+          {
+            "tab": "Documentation",
+            "groups": [
+              {
+                "group": "Introduction",
+                "pages": [
+                  "introduction/what-is-points",
+                  "introduction/technical-requirements",
+                  "introduction/faq",
+                  "introduction/quickstart"
+                ]
+              },
+              {
+                "group": "Authentication",
+                "pages": [
+                  "authentication/api-keys",
+                  "authentication/security"
+                ]
+              },
+              {
+                "group": "Integration Guide",
+                "pages": [
+                  "integration/checkout-flow",
+                  "integration/earn-only",
+                  "integration/redeem-flow",
+                  "integration/order-lifecycle",
+                  "integration/order-statuses",
+                  "integration/refunds-cancellations"
+                ]
+              },
+              {
+                "group": "Webhooks",
+                "pages": [
+                  "webhooks/overview",
+                  "webhooks/events",
+                  "webhooks/management",
+                  "webhooks/handling"
+                ]
+              },
+              {
+                "group": "Testing",
+                "pages": [
+                  "testing/credentials",
+                  "testing/postman-collection",
+                  "testing/go-live-checklist"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API Reference",
+            "openapi": "openapi/points-api-v1.yaml"
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/points-logo-color.png",
+    "dark": "/logo/points-logo-white.png"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:support@papp.sa"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Register",
+      "href": "https://business.papp.sa"
+    }
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/PointsAppSa",
+      "instagram": "https://instagram.com/pointsappsa",
+      "linkedin": "https://linkedin.com/company/pointsappsa"
+    }
+  }
+}

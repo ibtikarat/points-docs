@@ -1,0 +1,164 @@
+---
+title: 'Webhooks Overview'
+description: 'Real-time order notifications pushed from Points to your backend'
+---
+
+Webhooks are how Points tells **your backend** that something happened — an order was approved, a refund was issued, a shipping status changed. You register one or more HTTPS endpoints; Points posts JSON to them whenever an event fires.
+
+Webhooks are the **source of truth** for order state on your side. Poll-based reconciliation is a safety net, not the primary path.
+
+## When webhooks fire
+
+| Event | Fired when |
+| --- | --- |
+| `approved` | Order completes and points are settled |
+| `authorized` | Funds authorised (auth+capture PSPs) |
+| `captured` | Previously authorised funds captured |
+| `cancelled` | Order cancelled |
+| `completed` | Replacing order completed via `POST /orders/{uuid}/complete` |
+| `shipping_status_updated` | Shipping status changed via `POST /orders/{uuid}/status` |
+
+Full payload schemas in [Webhook events](/webhooks/events).
+
+## Delivery mechanics
+
+- **Transport** — HTTPS POST, `Content-Type: application/json`.
+- **Timeout** — 10 seconds per attempt.
+- **Retries** — up to 3 attempts on transient failure (non-2xx response, network error, timeout).
+- **Delivery order** — not guaranteed. Your handler must be idempotent (see below).
+- **Headers:**
+
+| Header | Value |
+| --- | --- |
+| `Content-Type` | `application/json` |
+| `X-Webhook-Secret` | The secret you registered with the webhook (use this to verify authenticity) |
+| `X-Webhook-Event` | Event name (e.g. `approved`). Same value as `event` in the body. |
+
+## Payload shape
+
+Every event has the same envelope:
+
+```json
+{
+  "event": "approved",
+  "order": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "reference_number": "REF-2024-001234",
+    "order_number": "ORD-2024-0001",
+    "type": "replacing",
+    "total_price": 150.75,
+    "total_points": 500,
+    "payment_status": "fully_paid",
+    "order_status": "approved",
+    "metadata": { "source": "web" },
+    "created_at": "2026-04-18T10:00:00Z",
+    "updated_at": "2026-04-18T10:05:12Z"
+  },
+  "timestamp": "2026-04-18T10:05:12Z"
+}
+```
+
+Some events include additional keys inside `order` (e.g. `status` + `status_label` for `shipping_status_updated`). See [Webhook events](/webhooks/events) for per-event fields.
+
+## Register a webhook
+
+Use the API, or the dashboard (**Settings → Webhooks**). Example:
+
+```bash
+curl -X POST https://api.papp.sa/api/v1/webhooks \
+  -H "x-api-key: $POINTS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Order Notifications",
+    "url":  "https://merchant.example.com/webhooks/points"
+  }'
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+    "merchant_id": 123,
+    "name": "Order Notifications",
+    "url": "https://merchant.example.com/webhooks/points",
+    "secret": "abc123def456...",
+    "created_at": "2026-04-18T10:00:00Z",
+    "updated_at": "2026-04-18T10:00:00Z"
+  }
+}
+```
+
+<Warning>
+  Store the `secret` securely — it is how you verify webhook authenticity. See [Webhook handling](/webhooks/handling).
+</Warning>
+
+See [Webhook management](/webhooks/management) for listing, updating, and deleting webhooks.
+
+## Multiple endpoints
+
+You can register more than one webhook per merchant. Common reasons:
+
+- Separate environments (staging vs production).
+- Separate downstream consumers (fulfilment, analytics, CRM).
+- A "dead-letter inspector" endpoint that only logs for audit.
+
+Every registered webhook receives **every** event for your merchant. Filtering is your responsibility.
+
+## Idempotency is non-negotiable
+
+Points may deliver the same `(order.id, event)` pair more than once — retry loops, backend replays, network blips. Design your handler so repeat deliveries are safe:
+
+```sql
+-- Example: reject duplicate events at the DB level
+create unique index webhook_event_dedupe
+  on webhook_events (points_order_uuid, event);
+```
+
+Or in application code:
+
+```javascript
+const existed = await db.webhookEvents.findOne({
+  where: { orderUuid: payload.order.id, event: payload.event }
+});
+if (existed) return res.status(200).end(); // ack, already processed
+```
+
+## Return fast, process later
+
+Your endpoint **must** respond 2xx within the 10-second timeout budget. Anything slower triggers a retry, which leads to duplicates. The standard pattern:
+
+```javascript
+app.post("/webhooks/points", async (req, res) => {
+  if (!verifySecret(req)) return res.status(401).end();
+  await queue.publish("points.webhook", req.body); // enqueue
+  res.status(200).end();                            // ack immediately
+});
+```
+
+Your worker pulls from the queue and does the real work (update DB, send email, notify WMS). If the worker fails, it can retry locally without Points re-delivering.
+
+## Local development
+
+Webhooks need a publicly reachable HTTPS URL. In local dev, tunnel your laptop to the internet:
+
+- [ngrok](https://ngrok.com/) — `ngrok http 3000`
+- [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) — `cloudflared tunnel --url http://localhost:3000`
+- [localtunnel](https://github.com/localtunnel/localtunnel) — `lt --port 3000`
+
+Register the tunnel URL as a webhook in the sandbox environment and trigger test events by calling the API against a sandbox order.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Webhook events" icon="list" href="/webhooks/events">
+    Per-event payload schemas and sample bodies.
+  </Card>
+  <Card title="Webhook handling" icon="shield-check" href="/webhooks/handling">
+    Verify signatures, acknowledge correctly, handle retries.
+  </Card>
+  <Card title="Webhook management" icon="gear" href="/webhooks/management">
+    CRUD operations via API or dashboard.
+  </Card>
+</CardGroup>

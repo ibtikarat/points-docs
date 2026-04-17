@@ -1,0 +1,81 @@
+---
+title: 'What is Points?'
+description: "Saudi Arabia's unified loyalty rewards platform"
+---
+
+**Points** is a unified loyalty rewards network for Saudi Arabia. Customers earn points from any participating merchant and redeem them as a discount at checkout across the entire network — a single wallet shared between thousands of stores.
+
+For merchants, Points integrates with your existing checkout to **drive repeat purchases**, **increase average order value**, and **reach new customers** already shopping in the network.
+
+<CardGroup cols={2}>
+  <Card title="Earn" icon="coins">
+    Customers receive points automatically on every purchase. Points are credited to their unified wallet in seconds.
+  </Card>
+  <Card title="Redeem" icon="gift">
+    Customers apply accumulated points at checkout as a direct discount on their order total.
+  </Card>
+  <Card title="Unified wallet" icon="wallet">
+    A single customer balance works across every merchant in the network — no per-merchant silos.
+  </Card>
+  <Card title="Saudi-first" icon="location-dot">
+    Built for the KSA market: Arabic + English, SAR pricing, local phone-number identity.
+  </Card>
+</CardGroup>
+
+## How Points works for merchants
+
+<Steps>
+  <Step title="Customer shops at your store">
+    Customer goes through your normal checkout flow — web, mobile app, in-store POS, anywhere you integrate.
+  </Step>
+  <Step title="Your backend calls the Points API">
+    On order confirmation, you call Points with the order amount, phone number, and items. Points issues and settles rewards.
+  </Step>
+  <Step title="Customer earns or redeems">
+    Depending on the flow, the customer either **earns points** on the purchase, or **redeems points** as a discount.
+  </Step>
+  <Step title="Points notifies you via webhooks">
+    Order events (approved, captured, cancelled, refunded, shipping status changes) are pushed to your webhook endpoints in real time.
+  </Step>
+</Steps>
+
+## Integration patterns
+
+There are two primary ways to integrate with Points — pick whichever matches your business.
+
+<CardGroup cols={2}>
+  <Card title="Earn-only" icon="plus" href="/integration/earn-only">
+    The simplest integration. A single API call per completed order awards points to the customer. No checkout redirection, no customer-facing UI changes required.
+  </Card>
+  <Card title="Checkout flow (earn + redeem)" icon="cart-shopping" href="/integration/checkout-flow">
+    Full integration where customers can redeem points during your checkout. Requires a short redirect to the Points checkout page and a webhook handler on your side.
+  </Card>
+</CardGroup>
+
+## Why Points?
+
+- **One integration, network-wide reach** — your customers arrive already holding points earned at other merchants.
+- **Increase AOV and retention** — reward programs consistently lift repeat-purchase rates.
+- **Fast to integrate** — most merchants go live in a single sprint using the REST API and webhooks.
+- **Built for KSA commerce** — works with Matajer, Salla, Zid, Shopify, WooCommerce, or any custom stack.
+
+## Where to next
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/introduction/quickstart">
+    Make your first API call in under 10 minutes.
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication/api-keys">
+    Get your API keys and learn how to authenticate requests.
+  </Card>
+  <Card title="Integration guide" icon="plug" href="/integration/checkout-flow">
+    Step-by-step checkout and earn-only integration walkthroughs.
+  </Card>
+  <Card title="API reference" icon="code" href="/api-reference">
+    Full endpoint reference generated from the OpenAPI spec.
+  </Card>
+</CardGroup>
+
+<Note>
+  Becoming a Points merchant? [Register at business.papp.sa](https://business.papp.sa) or contact [support@papp.sa](mailto:support@papp.sa).
+</Note>

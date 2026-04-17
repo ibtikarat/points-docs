@@ -1,0 +1,13 @@
+---
+title: 'Refunds & Cancellations'
+description: 'Rules, windows, and partial refund behaviour'
+---
+
+<Note>
+  Full content coming soon. This page will cover refund windows, partial-refund rules, how redeemed points are returned to the customer, how earned points are reversed, and the exact API calls:
+
+  - `POST /v1/orders/{uuid}/cancel` — while the order is `new` or `authorized`
+  - `POST /v1/orders/{uuid}/refund` — after `approved` / `captured`, with optional `amount` for partial refunds
+</Note>
+
+See [Order lifecycle](/integration/order-lifecycle) for the current state-machine view.

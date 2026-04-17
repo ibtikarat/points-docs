@@ -1,0 +1,230 @@
+---
+title: 'Webhook Events'
+description: 'Full catalogue of events Points delivers to your webhook endpoints'
+---
+
+Every webhook event shares the same envelope. This page documents each event, when it fires, and any additional fields in the payload.
+
+## Envelope
+
+```json
+{
+  "event": "<event-name>",
+  "order": { /* OrderResource plus per-event extras */ },
+  "timestamp": "2026-04-18T10:05:12Z"
+}
+```
+
+The `order` object always contains at least:
+
+| Field | Type | Example |
+| --- | --- | --- |
+| `id` | string (UUID) | `550e8400-e29b-41d4-a716-446655440000` |
+| `reference_number` | string \| null | `REF-2024-001234` |
+| `order_number` | string | `ORD-2024-0001` |
+| `type` | string | `earning` or `replacing` |
+| `total_price` | number (SAR) | `150.75` |
+| `total_points` | number | `500` |
+| `payment_status` | string | `fully_paid` or `partially_paid` |
+| `order_status` | string | `approved`, `authorized`, `captured`, `cancelled`, `fully_refunded`, `partially_refunded`, `new` |
+| `metadata` | object \| null | `{ "source": "web" }` |
+| `created_at` | ISO 8601 string | `2026-04-18T10:00:00Z` |
+| `updated_at` | ISO 8601 string | `2026-04-18T10:05:12Z` |
+
+Headers on every delivery:
+
+| Header | Example |
+| --- | --- |
+| `Content-Type` | `application/json` |
+| `X-Webhook-Secret` | `abc123def456...` (the secret you registered) |
+| `X-Webhook-Event` | Same as `event` in the body |
+
+---
+
+## `approved`
+
+**Fires when:** an order is fully settled — a paid checkout completes, or an earning order is awarded.
+
+**Use it to:** mark the order as confirmed in your system, send the customer a receipt, trigger fulfilment.
+
+```json
+{
+  "event": "approved",
+  "order": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "reference_number": "REF-2024-001234",
+    "order_number": "ORD-2024-0001",
+    "type": "replacing",
+    "total_price": 150.75,
+    "total_points": 500,
+    "payment_status": "fully_paid",
+    "order_status": "approved",
+    "metadata": { "source": "web" },
+    "created_at": "2026-04-18T10:00:00Z",
+    "updated_at": "2026-04-18T10:05:12Z"
+  },
+  "timestamp": "2026-04-18T10:05:12Z"
+}
+```
+
+---
+
+## `authorized`
+
+**Fires when:** funds are authorised on a two-step (auth → capture) payment flow. No money has moved yet.
+
+**Use it to:** reserve inventory, start fulfilment if your flow permits it before capture.
+
+```json
+{
+  "event": "authorized",
+  "order": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "order_number": "ORD-2024-0001",
+    "type": "replacing",
+    "order_status": "authorized",
+    "total_price": 150.75,
+    "total_points": 500,
+    "payment_status": "fully_paid",
+    "created_at": "2026-04-18T10:00:00Z",
+    "updated_at": "2026-04-18T10:01:00Z"
+  },
+  "timestamp": "2026-04-18T10:01:00Z"
+}
+```
+
+---
+
+## `captured`
+
+**Fires when:** previously-authorised funds are captured.
+
+**Use it to:** finalise the order, release inventory holds, run post-sale automation.
+
+```json
+{
+  "event": "captured",
+  "order": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "order_number": "ORD-2024-0001",
+    "order_status": "captured",
+    "total_price": 150.75,
+    "total_points": 500,
+    "payment_status": "fully_paid",
+    "created_at": "2026-04-18T10:00:00Z",
+    "updated_at": "2026-04-18T10:10:00Z"
+  },
+  "timestamp": "2026-04-18T10:10:00Z"
+}
+```
+
+---
+
+## `cancelled`
+
+**Fires when:** an order is cancelled via `POST /v1/orders/{uuid}/cancel`.
+
+**Use it to:** release inventory, notify the customer, stop fulfilment.
+
+```json
+{
+  "event": "cancelled",
+  "order": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "order_number": "ORD-2024-0001",
+    "order_status": "cancelled",
+    "total_price": 150.75,
+    "total_points": 0,
+    "payment_status": "fully_paid",
+    "reason": "Customer requested cancellation",
+    "created_at": "2026-04-18T10:00:00Z",
+    "updated_at": "2026-04-18T10:30:00Z"
+  },
+  "timestamp": "2026-04-18T10:30:00Z"
+}
+```
+
+The `reason` field, if supplied on the cancel request, is echoed in the payload.
+
+---
+
+## `completed`
+
+**Fires when:** a replacing (checkout) order is marked complete via `POST /v1/orders/{uuid}/complete` — typically after the customer's payment is confirmed by the PSP.
+
+**Use it to:** close out the order on your side if your flow distinguishes "approved" from "completed".
+
+```json
+{
+  "event": "completed",
+  "order": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "order_number": "ORD-2024-0001",
+    "order_status": "approved",
+    "total_price": 150.75,
+    "total_points": 500,
+    "payment_status": "fully_paid",
+    "created_at": "2026-04-18T10:00:00Z",
+    "updated_at": "2026-04-18T10:05:12Z"
+  },
+  "timestamp": "2026-04-18T10:05:12Z"
+}
+```
+
+---
+
+## `shipping_status_updated`
+
+**Fires when:** you update a physical-goods order's shipping status via `POST /v1/orders/{uuid}/status`.
+
+**Additional fields** (inside `order`):
+
+| Field | Type | Example |
+| --- | --- | --- |
+| `status` | string | One of `new`, `license_in_progress`, `ready_shipping`, `delivery_is_in_progress`, `delivered`, `cancelled` |
+| `status_label` | string | Human-readable label (Arabic/English) shown on the customer's transaction history |
+
+```json
+{
+  "event": "shipping_status_updated",
+  "order": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "order_number": "ORD-2024-0001",
+    "order_status": "approved",
+    "status": "ready_shipping",
+    "status_label": "Ready for shipping",
+    "total_price": 150.75,
+    "total_points": 500,
+    "payment_status": "fully_paid",
+    "created_at": "2026-04-18T10:00:00Z",
+    "updated_at": "2026-04-18T14:00:00Z"
+  },
+  "timestamp": "2026-04-18T14:00:00Z"
+}
+```
+
+---
+
+## Testing events
+
+The fastest way to trigger an event end-to-end is to issue the corresponding API call against a sandbox order:
+
+| Event | API call |
+| --- | --- |
+| `approved` | `POST /v1/orders/earning` or complete a checkout |
+| `authorized` | `POST /v1/orders/{uuid}/authorize` |
+| `captured` | `POST /v1/orders/{uuid}/capture` |
+| `cancelled` | `POST /v1/orders/{uuid}/cancel` |
+| `completed` | `POST /v1/orders/{uuid}/complete` |
+| `shipping_status_updated` | `POST /v1/orders/{uuid}/status` |
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Handling" icon="shield-check" href="/webhooks/handling">
+    Verify the secret, acknowledge correctly, stay idempotent.
+  </Card>
+  <Card title="Management" icon="gear" href="/webhooks/management">
+    Register, update, rotate, and delete webhooks.
+  </Card>
+</CardGroup>

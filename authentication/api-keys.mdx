@@ -1,0 +1,156 @@
+---
+title: 'API Keys'
+description: 'Public and Private keys — what they do and how to use them'
+---
+
+Points issues every merchant **two keys** per credential pair:
+
+| Key | Purpose | Sent where | Secret? |
+| --- | --- | --- | --- |
+| **Public key** | Identifies your merchant on the public Checkout endpoint. Safe to embed in browser/mobile code. | Inside the URL path: `POST /v1/orders/checkout/{publicKey}` | No |
+| **Private key** | Authenticates server-to-server API calls on behalf of your merchant. | `x-api-key` header on every authenticated request | **Yes — never expose** |
+
+<Warning>
+  The Private key is equivalent to a password for your merchant account. Anyone holding it can create and refund orders. Treat it like a production database password.
+</Warning>
+
+## Get your keys
+
+<Steps>
+  <Step title="Sign in">
+    Sign in to the [Points Business dashboard](https://business.papp.sa).
+  </Step>
+  <Step title="Open Settings → API Keys">
+    Both keys for your merchant are listed on this page.
+  </Step>
+  <Step title="Copy the values">
+    Click to copy each key. Store the Private key in your server-side secrets manager (AWS Secrets Manager, HashiCorp Vault, `.env` — wherever you keep production secrets).
+  </Step>
+  <Step title="(Optional) Rotate">
+    Use **Regenerate** to rotate a key. The old key is revoked immediately — deploy the new key first.
+  </Step>
+</Steps>
+
+## Using the Private key (authenticated endpoints)
+
+Every endpoint except the public Checkout endpoint requires the `x-api-key` header:
+
+```http
+POST /api/v1/orders/earning HTTP/1.1
+Host: api.papp.sa
+x-api-key: YOUR_PRIVATE_KEY
+Content-Type: application/json
+Accept: application/json
+
+{ ... }
+```
+
+If the header is missing or the key is invalid/inactive, the API returns:
+
+```json
+{
+  "status": false,
+  "message": "Invalid or inactive API key",
+  "appended_data": {}
+}
+```
+
+with HTTP status `400`.
+
+### Example — earning order
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://api.papp.sa/api/v1/orders/earning \
+  -H "x-api-key: $POINTS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "phone_number": "512345678", "total_price": 50, "order_number": "A-1", "products": [{"product_name":"Tea","product_price":50,"quantity":1}] }'
+```
+
+```javascript Node.js
+await fetch("https://api.papp.sa/api/v1/orders/earning", {
+  method: "POST",
+  headers: {
+    "x-api-key": process.env.POINTS_API_KEY,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ /* ... */ }),
+});
+```
+
+</CodeGroup>
+
+## Using the Public key (Checkout endpoint)
+
+The redirect-to-checkout flow uses the **Public key** embedded in the URL path. No `x-api-key` header is needed because this endpoint is designed to be called from the customer's browser:
+
+```bash
+curl -X POST https://api.papp.sa/api/v1/orders/checkout/YOUR_PUBLIC_KEY \
+  -H "Content-Type: application/json" \
+  -d '{ "total_price": 150.75, "order_number": "ORD-1", "products": [...] }'
+```
+
+The response returns a `checkout_url` that you redirect the customer to. See [Checkout flow](/integration/checkout-flow) for the full sequence.
+
+<Note>
+  The Public key does **not** grant read access to orders or any other merchant data. It only authorises creating checkout sessions for your merchant.
+</Note>
+
+## Rotating keys
+
+Rotate immediately if you suspect leakage (committed to git, shared in chat, old employee, etc.):
+
+<Steps>
+  <Step title="Generate a new Private key in the dashboard">
+    Go to **Settings → API Keys → Regenerate**. The new key is returned once; copy it immediately.
+  </Step>
+  <Step title="Deploy the new key to all production services">
+    Update your secrets store and redeploy. For zero-downtime rotation, dual-write to both keys briefly if your deployment is staggered.
+  </Step>
+  <Step title="Confirm no traffic on the old key">
+    Watch the dashboard API log for a full traffic cycle (e.g. 1 hour) before considering the rotation complete.
+  </Step>
+</Steps>
+
+## Environments
+
+Production and sandbox environments use **separate keys**. Keys from one environment never authenticate against the other.
+
+| Environment | Dashboard | API base URL |
+| --- | --- | --- |
+| Production | [business.papp.sa](https://business.papp.sa) | `https://api.papp.sa/api/v1` |
+| Sandbox | Provided on request | Provided with sandbox credentials |
+
+To request sandbox credentials, email [support@papp.sa](mailto:support@papp.sa).
+
+## Best practices
+
+<AccordionGroup>
+  <Accordion title="Store the Private key only in server-side secrets">
+    Never put it in client-side JavaScript, mobile apps, public repositories, CI logs, or customer-facing config files. Only your backend should ever see it.
+  </Accordion>
+  <Accordion title="Use environment variables or a secrets manager">
+    Keep the key out of source control. Load it at runtime from environment variables (`POINTS_API_KEY`) or a managed secret store (AWS Secrets Manager, GCP Secret Manager, Vault).
+  </Accordion>
+  <Accordion title="Scope access per service">
+    If multiple internal services call Points, consider provisioning separate keys per service so you can rotate individually and audit traffic by key.
+  </Accordion>
+  <Accordion title="Rotate on any suspicion of leakage">
+    Rotation is cheap and the old key is revoked instantly. When in doubt, rotate.
+  </Accordion>
+  <Accordion title="Monitor 400 rates">
+    A sudden spike in `Invalid or inactive API key` responses can signal a stale key in a newly deployed service, or a leaked key being probed.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Security" icon="shield" href="/authentication/security">
+    TLS, IP allow-listing, webhook secrets, and related hardening.
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/introduction/quickstart">
+    Ready with a key? Make your first call.
+  </Card>
+</CardGroup>
