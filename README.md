@@ -31,13 +31,13 @@ Open [http://localhost:3000](http://localhost:3000) to view the docs.
 
 ## Deployment
 
-Docs are auto-deployed via [Mintlify](https://mintlify.com). Any push to the `ai` branch triggers a redeploy of [docs.papp.sa](https://docs.papp.sa).
+Docs are auto-deployed via [Mintlify](https://mintlify.com). Any push to the `master` branch triggers a redeploy of [docs.papp.sa](https://docs.papp.sa).
 
 ```bash
 # Standard update flow
 git add .
 git commit -m "docs: short description"
-git push origin ai
+git push origin master
 ```
 
 ## Support
