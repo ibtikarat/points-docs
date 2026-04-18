@@ -3,6 +3,20 @@
   "theme": "mint",
   "name": "Points",
   "description": "Points API - Saudi Arabia's unified loyalty rewards platform",
+  "seo": {
+    "metatags": {
+      "title": "Points API Documentation",
+      "description": "Official developer documentation for the Points API — Saudi Arabia's unified loyalty rewards platform.",
+      "application-name": "Points",
+      "og:title": "Points API Documentation",
+      "og:description": "Official developer documentation for the Points API — Saudi Arabia's unified loyalty rewards platform.",
+      "og:site_name": "Points",
+      "og:locale": "en_US",
+      "twitter:title": "Points API Documentation",
+      "twitter:description": "Official developer documentation for the Points API — Saudi Arabia's unified loyalty rewards platform."
+    },
+    "indexing": "navigable"
+  },
   "colors": {
     "primary": "#0B1F3F",
     "light": "#4A90E2",
