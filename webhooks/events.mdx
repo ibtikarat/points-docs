@@ -205,6 +205,88 @@ The `reason` field, if supplied on the cancel request, is echoed in the payload.
 
 ---
 
+## `refunded`
+
+**Fires when:** a refund is created through `POST /v1/orders/{uuid}/refund`.
+
+**Use it to:** reverse fulfilment-side accounting, return value in your ERP, and mark the order as fully or partially refunded on your side.
+
+**Additional fields** (inside `order`):
+
+| Field | Type | Example |
+| --- | --- | --- |
+| `refund_amount` | number | `25.00` |
+| `reason` | string | `One line item returned` |
+| `type` | string | `earning` or `replacing` |
+| `refund_points` | number | `500` |
+| `left_points` | number | `1500` |
+| `left_amount` | number | `75.00` |
+
+Not every refund payload includes every optional field. For example, `refund_points`, `left_points`, and `left_amount` are especially relevant for earning-order reversals.
+
+```json
+{
+  "event": "refunded",
+  "order": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "order_number": "ORD-2024-0001",
+    "type": "earning",
+    "order_status": "partially_refunded",
+    "total_price": 150.75,
+    "total_points": 3000,
+    "payment_status": "fully_paid",
+    "refund_amount": 25.00,
+    "refund_points": 500,
+    "left_points": 2500,
+    "left_amount": 125.75,
+    "reason": "One line item returned",
+    "created_at": "2026-04-18T10:00:00Z",
+    "updated_at": "2026-04-18T15:00:00Z"
+  },
+  "timestamp": "2026-04-18T15:00:00Z"
+}
+```
+
+---
+
+## `auto_refunded`
+
+**Fires when:** Points automatically reverses a replacing order internally, for example when a required transaction record is missing during backend reconciliation.
+
+**Use it to:** treat the order as refund-class terminal state and stop assuming the checkout remained successful.
+
+**Additional fields** (inside `order`):
+
+| Field | Type | Example |
+| --- | --- | --- |
+| `refund_amount` | number | `150.75` |
+| `refund_points` | number | `3000` |
+| `reason` | string | `auto_refund_missing_transaction` |
+| `type` | string | `replacing` |
+
+```json
+{
+  "event": "auto_refunded",
+  "order": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "order_number": "ORD-2024-0001",
+    "type": "replacing",
+    "order_status": "fully_refunded",
+    "total_price": 150.75,
+    "total_points": 3000,
+    "payment_status": "fully_paid",
+    "refund_amount": 150.75,
+    "refund_points": 3000,
+    "reason": "auto_refund_missing_transaction",
+    "created_at": "2026-04-18T10:00:00Z",
+    "updated_at": "2026-04-18T16:00:00Z"
+  },
+  "timestamp": "2026-04-18T16:00:00Z"
+}
+```
+
+---
+
 ## Testing events
 
 The fastest way to trigger an event end-to-end is to issue the corresponding API call against a sandbox order:
@@ -216,7 +298,16 @@ The fastest way to trigger an event end-to-end is to issue the corresponding API
 | `captured` | `POST /v1/orders/{uuid}/capture` |
 | `cancelled` | `POST /v1/orders/{uuid}/cancel` |
 | `completed` | `POST /v1/orders/{uuid}/complete` |
+| `refunded` | `POST /v1/orders/{uuid}/refund` |
+| `auto_refunded` | Internal event; not normally merchant-triggered |
 | `shipping_status_updated` | `POST /v1/orders/{uuid}/status` |
+
+## Delivery semantics
+
+- Points sends webhook deliveries over HTTPS
+- each attempt uses a `10` second HTTP timeout
+- failed deliveries may be retried up to `3` times
+- order is not guaranteed across different events, so your consumer must be idempotent
 
 ## Next
 

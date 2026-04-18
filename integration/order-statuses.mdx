@@ -31,5 +31,5 @@ For physical-goods orders, update via `POST /v1/orders/{uuid}/status`.
 | `cancelled` | Shipping cancelled (distinct from financial cancellation) |
 
 <Note>
-  Deeper guidance (recommended transitions, edge cases, customer-facing labels) coming soon.
+  Keep shipping status separate from financial status in your own system. `order_status` tells you whether the order was approved, captured, cancelled, or refunded; `status` tells you where fulfilment stands.
 </Note>

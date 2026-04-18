@@ -3,11 +3,109 @@ title: 'Refunds & Cancellations'
 description: 'Rules, windows, and partial refund behaviour'
 ---
 
-<Note>
-  Full content coming soon. This page will cover refund windows, partial-refund rules, how redeemed points are returned to the customer, how earned points are reversed, and the exact API calls:
+This page explains how Points handles order reversals after creation.
 
-  - `POST /v1/orders/{uuid}/cancel` — while the order is `new` or `authorized`
-  - `POST /v1/orders/{uuid}/refund` — after `approved` / `captured`, with optional `amount` for partial refunds
-</Note>
+There are two distinct operations:
 
-See [Order lifecycle](/integration/order-lifecycle) for the current state-machine view.
+| Operation | Endpoint | Typical use |
+| --- | --- | --- |
+| Cancel | `POST /v1/orders/{uuid}/cancel` | The order should no longer continue |
+| Refund | `POST /v1/orders/{uuid}/refund` | Money/points need to be returned after settlement |
+
+## Cancel an order
+
+Use cancellation when the order should be stopped rather than financially reversed later.
+
+Example:
+
+```bash
+curl -X POST https://api.papp.sa/api/v1/orders/550e8400-e29b-41d4-a716-446655440000/cancel \
+  -H "x-api-key: $POINTS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "reason": "Customer requested cancellation" }'
+```
+
+### Current behavior
+
+- validates merchant ownership of the order
+- rejects already-cancelled or already-refunded orders
+- defaults the reason to `"Order cancelled via API"` if omitted
+- emits webhook event `cancelled`
+
+## Refund an order
+
+Use refund after an order is already settled and value must be returned.
+
+Example full refund:
+
+```bash
+curl -X POST https://api.papp.sa/api/v1/orders/550e8400-e29b-41d4-a716-446655440000/refund \
+  -H "x-api-key: $POINTS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+Example partial refund:
+
+```bash
+curl -X POST https://api.papp.sa/api/v1/orders/550e8400-e29b-41d4-a716-446655440000/refund \
+  -H "x-api-key: $POINTS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 25.00,
+    "reason": "One line item returned"
+  }'
+```
+
+### Current behavior
+
+- supports both full and partial refunds
+- emits webhook event `refunded`
+- updates `order_status` to `fully_refunded` or `partially_refunded`
+
+## How Points value is reversed
+
+### Replacing (redeem) orders
+
+For a redeem checkout, refunding reverses the redeemed value and updates the order status accordingly.
+
+### Earning orders
+
+For an earning order, refunding reverses previously awarded points. In partial refunds, the backend calculates the proportional points to reverse and includes remaining amounts in the refund payload used internally.
+
+## Auto-refund edge case
+
+There is also an internal system event called `auto_refunded`. This can occur when the backend automatically reverses a replacing order because an expected transaction record was missing during reconciliation. Integrators should treat it as a refund-class terminal state and handle it in webhook consumers.
+
+## Recommended merchant policy
+
+<AccordionGroup>
+  <Accordion title="Use cancel before fulfilment">
+    If the order should simply stop and has not entered your final fulfilment path, cancel is usually cleaner than refund.
+  </Accordion>
+  <Accordion title="Use refund after settlement">
+    If value was already settled, use the refund endpoint so Points can properly reverse the financial and loyalty effects.
+  </Accordion>
+  <Accordion title="Persist refund reasons">
+    Even when not required, always send a human-readable `reason` so support teams can reconcile merchant actions against webhook history.
+  </Accordion>
+</AccordionGroup>
+
+## Webhooks you should expect
+
+| Action | Webhook |
+| --- | --- |
+| Cancel | `cancelled` |
+| Refund | `refunded` |
+| Internal automatic reversal | `auto_refunded` |
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Order Lifecycle" icon="timeline" href="/integration/order-lifecycle">
+    See where cancellation and refund fit in the state machine.
+  </Card>
+  <Card title="Webhook Events" icon="list" href="/webhooks/events">
+    Payload examples for `cancelled`, `refunded`, and related events.
+  </Card>
+</CardGroup>

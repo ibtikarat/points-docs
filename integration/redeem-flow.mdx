@@ -3,8 +3,114 @@ title: 'Redeem Flow'
 description: 'Letting customers spend points at checkout'
 ---
 
-<Note>
-  Full content coming soon. This page will focus specifically on the redeem-side UX inside the Points checkout — balance display, partial redemption rules, minimum spend, and remainder-payment handling.
-</Note>
+Redeem is the customer-facing part of the full [Checkout flow](/integration/checkout-flow). Instead of only earning points after purchase, the customer can spend their existing Points balance as a discount during checkout.
 
-For the full end-to-end integration (redeem + earn), see [Checkout flow](/integration/checkout-flow).
+## What redeem means in Points
+
+In a redeem flow:
+
+1. your backend creates a checkout session
+2. the customer is redirected to the Points-hosted checkout
+3. the customer sees their eligible balance
+4. they apply some or all of the balance
+5. they pay any remaining amount
+6. Points notifies your backend by webhook
+
+## Merchant responsibilities
+
+Your side is responsible for:
+
+- creating the checkout session with the correct `total_price`
+- passing a stable `order_number`
+- storing your own cart/order context in `metadata`
+- handling the browser return via `callback_url`
+- treating the webhook as the source of truth
+
+Points is responsible for:
+
+- identifying the customer
+- showing the redeemable balance
+- applying redemption inside the hosted checkout
+- finishing the payment flow and order settlement
+
+## Checkout endpoint
+
+Use:
+
+```http
+POST /v1/orders/checkout/{publicKey}
+```
+
+This endpoint uses the **Public key** in the path and does not require the `x-api-key` header.
+
+## Customer identity behavior
+
+The checkout endpoint accepts `phone_number`. Current runtime behavior is:
+
+- if the phone belongs to a known Points customer, the checkout continues to verification
+- if the phone is not found, the response still returns a `checkout_url`, but the customer lands on an onboarding / phone-change path before completing checkout
+
+That means your frontend should never make assumptions from the phone lookup alone. Always redirect the user to the returned `checkout_url`.
+
+## Recommended request shape
+
+```json
+{
+  "phone_number": "512345678",
+  "total_price": 150.75,
+  "order_number": "ORD-2026-0001",
+  "callback_url": "https://merchant.example.com/checkout/callback?order=ORD-2026-0001",
+  "products": [
+    { "product_name": "Sneakers", "product_price": 120.75, "quantity": 1 },
+    { "product_name": "Socks", "product_price": 30.00, "quantity": 1 }
+  ],
+  "metadata": {
+    "channel": "web",
+    "cart_id": "cart_abc123"
+  }
+}
+```
+
+## What your customer sees
+
+Inside Points checkout, the customer can:
+
+- verify their identity
+- review the order amount
+- apply available points
+- pay the remainder
+
+The exact UX may evolve, but your backend integration contract does not change: create checkout, redirect, listen to webhook, reconcile the order state.
+
+## Callback vs webhook
+
+The `callback_url` is for user experience only. Use it to show:
+
+- order confirmation
+- pending state
+- payment failure / retry page
+
+Do not use browser redirect as proof of payment. The authoritative signal is the webhook plus, if needed, `GET /v1/orders/{uuid}`.
+
+## Post-payment actions
+
+After a successful redeem checkout, your system should:
+
+1. wait for the webhook
+2. mark the order paid/approved on your side
+3. release fulfilment
+4. optionally update shipping status later with `POST /v1/orders/{uuid}/status`
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Checkout Flow" icon="cart-shopping" href="/integration/checkout-flow">
+    Full end-to-end redirect integration.
+  </Card>
+  <Card title="Webhooks Overview" icon="bell" href="/webhooks/overview">
+    Understand the events you receive after checkout.
+  </Card>
+  <Card title="Refunds & Cancellations" icon="rotate-left" href="/integration/refunds-cancellations">
+    What happens when a redeemed order is cancelled or refunded.
+  </Card>
+</CardGroup>

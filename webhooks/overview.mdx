@@ -16,6 +16,8 @@ Webhooks are the **source of truth** for order state on your side. Poll-based re
 | `captured` | Previously authorised funds captured |
 | `cancelled` | Order cancelled |
 | `completed` | Replacing order completed via `POST /orders/{uuid}/complete` |
+| `refunded` | Full or partial refund processed |
+| `auto_refunded` | Internal automatic reversal performed by Points |
 | `shipping_status_updated` | Shipping status changed via `POST /orders/{uuid}/status` |
 
 Full payload schemas in [Webhook events](/webhooks/events).

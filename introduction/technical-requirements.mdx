@@ -3,12 +3,118 @@ title: 'Technical Requirements'
 description: 'System requirements for Points integration'
 ---
 
-<Note>
-  Full content coming soon. The bullets below are the load-bearing constraints; deeper rationale is in [Security](/authentication/security).
-</Note>
+This page lists the non-negotiable requirements for a production-grade Points integration. If your stack meets everything here, you can safely implement either [Earn-only](/integration/earn-only) or the full [Checkout flow](/integration/checkout-flow).
 
-- **HTTPS only** — all Points endpoints require HTTPS with TLS 1.2 or higher.
-- **Webhook endpoint** — must be a publicly reachable HTTPS URL that responds 2xx within 10 seconds.
-- **JSON** — all request and response bodies use `application/json`.
-- **SDKs** — no official SDK yet; any language with a modern HTTP client works (examples in Node.js, Python, PHP, cURL in the [Quickstart](/introduction/quickstart)).
-- **IP allow-listing** — optional, available on request.
+## Core requirements
+
+| Requirement | What you need |
+| --- | --- |
+| HTTPS | All API calls and webhook deliveries use HTTPS. Your webhook endpoint must present a valid TLS certificate. |
+| JSON | Request and response bodies are `application/json`. |
+| Server-side integration | Authenticated API calls must originate from your backend, never from browser/mobile client code. |
+| Secrets storage | Your Private API key and webhook secret must be stored in environment variables or a secrets manager. |
+| Public webhook URL | Points must be able to reach your webhook endpoint from the public internet. |
+| Order persistence | You must store the returned Points order `uuid` and your own `order_number`. |
+
+## Network requirements
+
+- **API base URL**: `https://api.papp.sa/api/v1`
+- **Webhook delivery**: HTTPS `POST` from Points to your endpoint
+- **TLS**: TLS 1.2 or higher
+- **Ports**: standard HTTPS on `443`
+- **IP allow-listing**: optional and available on request, but the primary verification mechanism is `X-Webhook-Secret`
+
+## Application requirements
+
+### 1. You need a backend service
+
+Points is not a client-side integration. Your system must have a backend capable of:
+
+- calling the REST API
+- storing orders and webhook events
+- validating `X-Webhook-Secret`
+- running asynchronous work after webhook receipt
+
+### 2. You must store these values
+
+At minimum, persist:
+
+| Value | Why it matters |
+| --- | --- |
+| Your internal `order_number` | Your reconciliation key |
+| Points order `uuid` | Required for lookup, cancel, refund, capture, status update |
+| Webhook event receipts | Needed for idempotency and audit |
+| `reference_number` | Useful for merchant support and dashboard matching |
+
+### 3. Your webhook handler must be fast
+
+Points' webhook worker posts to your endpoint with a `10` second HTTP timeout and retries failed deliveries up to `3` times. In practice, your handler should:
+
+1. verify the secret
+2. enqueue work
+3. return `2xx` immediately
+
+Do not perform slow fulfilment or ERP calls before acknowledging the webhook.
+
+## Data expectations
+
+### Phone numbers
+
+- KSA format is expected
+- the backend normalises `+966`, `00966`, `966`, and leading `0`
+- the final accepted mobile format is `5XXXXXXXX`
+
+### Amounts
+
+- all monetary values are in **SAR**
+- all request totals must be numeric
+- points are derived server-side from your order amount
+
+### Order items
+
+For both earning and checkout flows, send line items whenever possible. They improve reconciliation, merchant support, and customer-facing history.
+
+## No official SDK requirement
+
+There is currently no official SDK. Any stack with a modern HTTP client works:
+
+- Node.js
+- PHP / Laravel
+- Python
+- Ruby
+- Java / Kotlin
+- .NET
+
+Examples are available in [Quickstart](/introduction/quickstart) and throughout the integration guides.
+
+## Recommended production setup
+
+<AccordionGroup>
+  <Accordion title="Minimum recommended architecture">
+    Frontend calls your backend, your backend calls Points, Points calls your webhook, your worker updates your order state. This gives you auditability and retry control on both sides.
+  </Accordion>
+  <Accordion title="Recommended reconciliation">
+    Keep webhooks as the primary signal, but run a scheduled reconciliation job that queries `GET /v1/orders/{uuid}` for any order still waiting on a terminal state.
+  </Accordion>
+  <Accordion title="Recommended observability">
+    Monitor 4xx and 5xx rates to the API, webhook verification failures, duplicate webhook attempts, and orders that never receive a terminal event.
+  </Accordion>
+</AccordionGroup>
+
+## Platform note
+
+Points supports direct API integration today. If you are integrating through a commerce platform or custom middleware, the technical requirements above still apply unless your platform-specific connector explicitly abstracts them for you.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/introduction/quickstart">
+    Make your first authenticated API call.
+  </Card>
+  <Card title="Security" icon="shield" href="/authentication/security">
+    Hardening checklist for keys, webhooks, and logs.
+  </Card>
+  <Card title="Go-Live Checklist" icon="check-double" href="/testing/go-live-checklist">
+    Final production readiness checks.
+  </Card>
+</CardGroup>

@@ -3,14 +3,98 @@ title: 'Webhook Management'
 description: 'Create, list, update, and delete webhook endpoints'
 ---
 
-<Note>
-  Full content coming soon. This page will walk through the webhook CRUD endpoints with examples:
+Points lets each merchant manage webhook endpoints over the API.
 
-  - `GET /v1/webhooks` — list registered webhooks (paginated)
-  - `POST /v1/webhooks` — register a new webhook
-  - `GET /v1/webhooks/{uuid}` — retrieve a single webhook
-  - `PUT` / `PATCH /v1/webhooks/{uuid}` — update name or URL
-  - `DELETE /v1/webhooks/{uuid}` — remove a webhook
-</Note>
+Available operations:
 
-A minimal example lives in [Webhooks overview](/webhooks/overview#register-a-webhook). Full endpoint details are in the [API reference](/api-reference).
+- `GET /v1/webhooks`
+- `POST /v1/webhooks`
+- `GET /v1/webhooks/{uuid}`
+- `PUT / PATCH /v1/webhooks/{uuid}`
+- `DELETE /v1/webhooks/{uuid}`
+
+All webhook management endpoints require `x-api-key`.
+
+## Create
+
+```bash
+curl -X POST https://api.papp.sa/api/v1/webhooks \
+  -H "x-api-key: $POINTS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Order Notifications",
+    "url": "https://merchant.example.com/webhooks/points"
+  }'
+```
+
+Response fields include:
+
+- `uuid`
+- `merchant_id`
+- `name`
+- `url`
+- `secret`
+- `created_at`
+- `updated_at`
+
+<Warning>
+  Persist the returned `secret` securely at creation time. Your webhook consumer needs it to verify authenticity.
+</Warning>
+
+## List
+
+```bash
+curl https://api.papp.sa/api/v1/webhooks \
+  -H "x-api-key: $POINTS_API_KEY" \
+  -H "Accept: application/json"
+```
+
+Current backend behavior paginates the results. You can pass `per_page`.
+
+## Retrieve one webhook
+
+```bash
+curl https://api.papp.sa/api/v1/webhooks/550e8400-e29b-41d4-a716-446655440000 \
+  -H "x-api-key: $POINTS_API_KEY" \
+  -H "Accept: application/json"
+```
+
+## Update
+
+```bash
+curl -X PATCH https://api.papp.sa/api/v1/webhooks/550e8400-e29b-41d4-a716-446655440000 \
+  -H "x-api-key: $POINTS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Primary Order Webhook",
+    "url": "https://merchant.example.com/webhooks/points-v2"
+  }'
+```
+
+## Delete
+
+```bash
+curl -X DELETE https://api.papp.sa/api/v1/webhooks/550e8400-e29b-41d4-a716-446655440000 \
+  -H "x-api-key: $POINTS_API_KEY"
+```
+
+## Validation and operational rules
+
+| Rule | Current behavior |
+| --- | --- |
+| Merchant must be verified/published | Required for create, update, delete |
+| URL must be valid | Enforced |
+| Duplicate URL for same merchant | Rejected |
+| Wrong merchant tries to access webhook | Returns not found |
+
+## Recommended operational model
+
+- one primary webhook URL per environment
+- optionally one additional audit or dead-letter endpoint
+- avoid pointing the same merchant to too many downstream consumers unless you truly need fan-out
+
+## Dashboard vs API
+
+You can manage webhooks through the Business dashboard or the API. The API is recommended if you want repeatable environment setup through scripts.
+
+See [Webhooks overview](/webhooks/overview#register-a-webhook) for the quickstart example and [API reference](/api-reference) for schema details.

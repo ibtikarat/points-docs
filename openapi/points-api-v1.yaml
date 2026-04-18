@@ -90,8 +90,8 @@ paths:
       summary: Create an earning order
       description: >
         Creates an earning order (points awarded on a completed off-platform
-        purchase). The request is serialized inside a distributed lock keyed by
-        `merchant_id + order_number` to avoid duplicates.
+        purchase). The request is serialized inside a distributed lock scoped to
+        the authenticated merchant to reduce concurrent processing conflicts.
       operationId: createEarningOrder
       requestBody:
         required: true
@@ -211,7 +211,7 @@ paths:
         - Orders
       summary: Cancel an order
       description: >
-        Cancels an order and fires the `order_cancelled` webhook. If `reason` is
+        Cancels an order and fires the `cancelled` webhook. If `reason` is
         omitted, the server stores the default `"Order cancelled via API"` and
         echoes it in the webhook payload.
       operationId: cancelOrder
