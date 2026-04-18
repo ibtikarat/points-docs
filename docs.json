@@ -41,6 +41,12 @@
                 ]
               },
               {
+                "group": "E-commerce Platforms",
+                "pages": [
+                  "e-commerce-platforms/matajer"
+                ]
+              },
+              {
                 "group": "Authentication",
                 "pages": [
                   "authentication/api-keys",
