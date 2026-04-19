@@ -1,26 +1,60 @@
 ---
 title: 'F.A.Q.'
-description: 'Frequently asked questions'
+description: 'Frequently asked questions about Points'
 ---
 
-<Note>
-  The FAQ will grow as common merchant questions surface. Have one we should include? Email [support@papp.sa](mailto:support@papp.sa).
-</Note>
+# F.A.Q.
 
-<AccordionGroup>
-  <Accordion title="How long do points stay valid?">
-    Customer points expire 24 months from the earning date.
-  </Accordion>
-  <Accordion title="Which currency does Points use?">
-    SAR. All amounts in the API are in Saudi Riyals.
-  </Accordion>
-  <Accordion title="Can one customer redeem at multiple merchants?">
-    Yes — the Points wallet is unified across the whole merchant network. Any balance earned at one merchant can be redeemed at any other participating merchant.
-  </Accordion>
-  <Accordion title="Do I need both Earn-only and the full Checkout?">
-    No — pick whichever matches your business. You can start with [Earn-only](/integration/earn-only) and upgrade to the full [Checkout flow](/integration/checkout-flow) later.
-  </Accordion>
-  <Accordion title="Is there a sandbox?">
-    Yes. Email [support@papp.sa](mailto:support@papp.sa) for sandbox credentials.
-  </Accordion>
-</AccordionGroup>
+This page answers the most common questions about integrating with Points.
+
+## Where can I find my Points API keys?
+
+You can find your **Public Key** and **Private Key** in the Points merchant dashboard under API keys.
+
+## What is the difference between the Public Key and Private Key?
+
+The **Public Key** is used to create a Points checkout session from `POST /v1/orders/checkout/{publicKey}`.
+
+The **Private Key** is used by your backend for authenticated API calls through the `x-api-key` header. Do not expose the Private Key in frontend code.
+
+## Which integration should I use?
+
+Use **Earn-only** if you only want customers to earn points after a completed purchase.
+
+Use **Checkout flow** if you want customers to redeem Points during checkout.
+
+Use **Matajer** if your store is on Matajer and you want to activate Points from the platform settings.
+
+## How do I connect Points with Matajer?
+
+Open your Matajer store settings, go to payment methods, choose Points under loyalty programs, then paste your Points activation keys.
+
+See [Matajer](/e-commerce-platforms/matajer) for the step-by-step guide.
+
+## What if my platform is not listed?
+
+Use the direct API integration. Start with [Quick start](/introduction/quickstart), then choose either [Earn-only](/integration/earn-only) or [Checkout flow](/integration/checkout-flow).
+
+## How do I know an order was completed?
+
+Use webhooks as the main signal. You can also call `GET /v1/orders/{uuid}` from your backend to verify the latest order status.
+
+## What should I store from the Points response?
+
+Store the Points order `uuid`, your own `order_number`, and the `reference_number` when available. You need the `uuid` for lookup, refund, cancellation, capture, and shipping status updates.
+
+## How should I secure webhooks?
+
+Verify the `X-Webhook-Secret` header on every webhook request, return `2xx` quickly, and make your handler idempotent using `(order.id, event)`.
+
+## Can customers earn and redeem points?
+
+Yes. Customers can earn points after purchases and redeem available Points during checkout when the full checkout flow is enabled.
+
+## How do refunds work?
+
+Use `POST /v1/orders/{uuid}/refund`. Points updates the order status and sends a `refunded` webhook. Partial refunds are supported when you send an `amount`.
+
+## Who do I contact for support?
+
+Contact [support@papp.sa](mailto:support@papp.sa).
