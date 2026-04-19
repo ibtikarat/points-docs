@@ -5,55 +5,57 @@ description: 'Frequently asked questions about Points'
 
 # F.A.Q.
 
-This page answers the most common questions about integrating with Points.
+Answers to the core questions merchants and developers usually need before integrating Points.
 
-## Where can I find my Points API keys?
+## What is Points?
 
-You can find your **Public Key** and **Private Key** in the Points merchant dashboard under API keys.
+Points is a loyalty rewards platform that lets customers earn points from purchases and redeem available points during checkout.
 
-## What is the difference between the Public Key and Private Key?
+## How do customers earn points?
 
-The **Public Key** is used to create a Points checkout session from `POST /v1/orders/checkout/{publicKey}`.
+After a successful purchase, your system sends the completed order to Points. Points calculates and records the earned points for the customer.
 
-The **Private Key** is used by your backend for authenticated API calls through the `x-api-key` header. Do not expose the Private Key in frontend code.
+## How do customers redeem points?
+
+When checkout redemption is enabled, your backend creates a Points checkout session and redirects the customer to complete the redemption flow.
 
 ## Which integration should I use?
 
-Use **Earn-only** if you only want customers to earn points after a completed purchase.
+Use **Matajer** if your store is on Matajer.
 
-Use **Checkout flow** if you want customers to redeem Points during checkout.
+Use **Earn-only** if customers only need to earn points after purchases.
 
-Use **Matajer** if your store is on Matajer and you want to activate Points from the platform settings.
+Use **Checkout flow** if customers need to redeem points during checkout.
 
-## How do I connect Points with Matajer?
+## How do I activate Points on Matajer?
 
-Open your Matajer store settings, go to payment methods, choose Points under loyalty programs, then paste your Points activation keys.
+Open Matajer store settings, go to payment methods, choose Points under loyalty programs, then paste your Points activation keys.
 
 See [Matajer](/e-commerce-platforms/matajer) for the step-by-step guide.
 
-## What if my platform is not listed?
+## Which API keys do I need?
 
-Use the direct API integration. Start with [Quick start](/introduction/quickstart), then choose either [Earn-only](/integration/earn-only) or [Checkout flow](/integration/checkout-flow).
+Use the **Public Key** to create checkout sessions.
 
-## How do I know an order was completed?
+Use the **Private Key** for backend API requests through the `x-api-key` header.
 
-Use webhooks as the main signal. You can also call `GET /v1/orders/{uuid}` from your backend to verify the latest order status.
+Never expose the Private Key in frontend code.
 
-## What should I store from the Points response?
+## How do I know the order status?
 
-Store the Points order `uuid`, your own `order_number`, and the `reference_number` when available. You need the `uuid` for lookup, refund, cancellation, capture, and shipping status updates.
+Use webhooks as the main source of truth. Your backend can also call `GET /v1/orders/{uuid}` to check the latest status.
 
-## How should I secure webhooks?
+## What should I store?
 
-Verify the `X-Webhook-Secret` header on every webhook request, return `2xx` quickly, and make your handler idempotent using `(order.id, event)`.
-
-## Can customers earn and redeem points?
-
-Yes. Customers can earn points after purchases and redeem available Points during checkout when the full checkout flow is enabled.
+Store the Points order `uuid`, your own `order_number`, and the `reference_number` when available.
 
 ## How do refunds work?
 
-Use `POST /v1/orders/{uuid}/refund`. Points updates the order status and sends a `refunded` webhook. Partial refunds are supported when you send an `amount`.
+Use `POST /v1/orders/{uuid}/refund`. Points updates the order status and sends a `refunded` webhook.
+
+## What if my platform is not listed?
+
+Use the direct API integration. Start with [Quick start](/introduction/quickstart), then choose [Earn-only](/integration/earn-only) or [Checkout flow](/integration/checkout-flow).
 
 ## Who do I contact for support?
 

@@ -1,0 +1,88 @@
+@font-face {
+  font-family: "Ping AR + LT";
+  src: url("/fonts/PingARLT-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --points-black: #000000;
+  --points-black-hover: #1f1f1f;
+  --points-purple: #5f4be8;
+  --points-purple-hover: #7868ff;
+  --points-purple-soft: rgba(95, 75, 232, 0.16);
+}
+
+html,
+body,
+button,
+input,
+textarea,
+select {
+  font-family: "Ping AR + LT", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 360px;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(58rem 18rem at 58% -7%, var(--points-purple-soft), transparent 72%),
+    radial-gradient(42rem 14rem at 32% -4%, rgba(95, 75, 232, 0.10), transparent 76%),
+    linear-gradient(180deg, rgba(95, 75, 232, 0.055), transparent 74%);
+  filter: blur(18px);
+}
+
+body > div.relative.antialiased {
+  position: relative;
+  z-index: 1;
+}
+
+#topbar-cta-button a > span.absolute.inset-0,
+button[class*="bg-primary"]:not([class*="/"]),
+a[class*="bg-primary"]:not([class*="/"]) {
+  background-color: var(--points-black) !important;
+  transition: background-color 160ms ease, opacity 160ms ease;
+}
+
+#topbar-cta-button a:hover > span.absolute.inset-0,
+button[class*="bg-primary"]:not([class*="/"]):hover,
+a[class*="bg-primary"]:not([class*="/"]):hover {
+  background-color: var(--points-black-hover) !important;
+  opacity: 1 !important;
+}
+
+.dark body::before {
+  background:
+    radial-gradient(58rem 18rem at 58% -7%, rgba(95, 75, 232, 0.24), transparent 72%),
+    radial-gradient(42rem 14rem at 32% -4%, rgba(95, 75, 232, 0.16), transparent 76%),
+    linear-gradient(180deg, rgba(95, 75, 232, 0.10), transparent 74%);
+}
+
+.dark #topbar-cta-button a > span.absolute.inset-0,
+.dark button[class*="bg-primary"]:not([class*="/"]),
+.dark a[class*="bg-primary"]:not([class*="/"]) {
+  background-color: var(--points-purple) !important;
+}
+
+.dark #topbar-cta-button a:hover > span.absolute.inset-0,
+.dark button[class*="bg-primary"]:not([class*="/"]):hover,
+.dark a[class*="bg-primary"]:not([class*="/"]):hover {
+  background-color: var(--points-purple-hover) !important;
+}
+
+html:not(.dark) [class*="text-primary"],
+html:not(.dark) [class*="border-primary"] {
+  color: var(--points-black) !important;
+  border-color: var(--points-black) !important;
+}
+
+.dark [class*="text-primary"],
+.dark [class*="border-primary"] {
+  color: var(--points-purple) !important;
+  border-color: var(--points-purple) !important;
+}
