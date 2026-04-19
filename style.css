@@ -58,9 +58,9 @@ a[class*="bg-primary"]:not([class*="/"]):hover {
 
 .dark body::before {
   background:
-    radial-gradient(58rem 18rem at 58% -7%, rgba(95, 75, 232, 0.24), transparent 72%),
-    radial-gradient(42rem 14rem at 32% -4%, rgba(95, 75, 232, 0.16), transparent 76%),
-    linear-gradient(180deg, rgba(95, 75, 232, 0.10), transparent 74%);
+    radial-gradient(58rem 18rem at 58% -7%, rgba(95, 75, 232, 0.34), transparent 72%),
+    radial-gradient(42rem 14rem at 32% -4%, rgba(120, 104, 255, 0.22), transparent 76%),
+    linear-gradient(180deg, rgba(95, 75, 232, 0.16), transparent 74%);
 }
 
 .dark #topbar-cta-button a > span.absolute.inset-0,
@@ -148,8 +148,9 @@ html:not(.dark) [class*="border-primary"] {
 .dark #content-area::before {
   background: radial-gradient(
     ellipse at center,
-    rgba(95, 75, 232, 0.12) 0%,
-    rgba(95, 75, 232, 0.06) 35%,
+    rgba(95, 75, 232, 0.26) 0%,
+    rgba(120, 104, 255, 0.14) 35%,
+    rgba(95, 75, 232, 0.06) 65%,
     transparent 80%
   );
 }
@@ -157,7 +158,7 @@ html:not(.dark) [class*="border-primary"] {
 .dark #content-area::after {
   background: radial-gradient(
     circle,
-    rgba(95, 75, 232, 0.05) 0%,
+    rgba(120, 104, 255, 0.12) 0%,
     transparent 70%
   );
 }
