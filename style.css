@@ -86,3 +86,78 @@ html:not(.dark) [class*="border-primary"] {
   color: var(--points-purple) !important;
   border-color: var(--points-purple) !important;
 }
+
+/* ========================================
+   Soft Platform Glow - Background Only
+   ======================================== */
+
+#content-area::before {
+  content: "";
+  position: fixed;
+  top: -10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 500px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(95, 75, 232, 0.18) 0%,
+    rgba(95, 75, 232, 0.10) 35%,
+    rgba(95, 75, 232, 0.04) 65%,
+    transparent 80%
+  );
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#content-area::after {
+  content: "";
+  position: fixed;
+  top: 40%;
+  right: -5%;
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(
+    circle,
+    rgba(95, 75, 232, 0.08) 0%,
+    transparent 70%
+  );
+  filter: blur(100px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#content-area > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 768px) {
+  #content-area::before {
+    width: 100%;
+    height: 300px;
+    filter: blur(60px);
+  }
+
+  #content-area::after {
+    display: none;
+  }
+}
+
+.dark #content-area::before {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(95, 75, 232, 0.12) 0%,
+    rgba(95, 75, 232, 0.06) 35%,
+    transparent 80%
+  );
+}
+
+.dark #content-area::after {
+  background: radial-gradient(
+    circle,
+    rgba(95, 75, 232, 0.05) 0%,
+    transparent 70%
+  );
+}
