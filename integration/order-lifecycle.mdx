@@ -43,7 +43,7 @@ stateDiagram-v2
 | `type` (numeric) | `type` (webhook string) | Description |
 | --- | --- | --- |
 | `1` | `earning` | Single-step order created via `POST /orders/earning`. Awards points on a purchase the customer has already paid for on your side. |
-| `2` | `replacing` | Full Points checkout — customer redeems + pays remainder on `pay.papp.sa`. |
+| `2` | `replacing` | Full Points checkout — customer redeems + pays remainder on `business.papp.sa`. |
 
 The state machine above applies to both, but earning orders typically move `new → approved` in a single step with no intermediate `authorized`/`captured`.
 
@@ -65,7 +65,7 @@ Update with `POST /v1/orders/{uuid}/status`. See [Order statuses](/integration/o
 ## Timeline example — redeem checkout with full refund
 
 1. Customer clicks **Pay** → you call `POST /orders/checkout/{publicKey}` → order is `new`.
-2. Customer completes payment on `pay.papp.sa` → order transitions to `approved`, webhook `approved` fires.
+2. Customer completes payment on `business.papp.sa` → order transitions to `approved`, webhook `approved` fires.
 3. 7 days later, customer requests a refund → you call `POST /orders/{uuid}/refund` → order moves to `fully_refunded`, redeemed points are returned, earned points reversed.
 
 ## Timeline example — authorize-capture flow

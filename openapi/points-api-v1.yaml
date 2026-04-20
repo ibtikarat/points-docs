@@ -642,7 +642,7 @@ components:
                 checkout_url:
                   type: string
                   format: uri
-                  example: https://pay.papp.sa/session/abcd1234
+                  example: https://business.papp.sa/session/abcd1234
     ProductLine:
       type: object
       required:
