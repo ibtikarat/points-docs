@@ -37,7 +37,7 @@ Every endpoint except the public Checkout endpoint requires the `x-api-key` head
 
 ```http
 POST /api/v1/orders/earning HTTP/1.1
-Host: api.papp.sa
+Host: business.papp.sa
 x-api-key: YOUR_PRIVATE_KEY
 Content-Type: application/json
 Accept: application/json
@@ -62,14 +62,14 @@ with HTTP status `400`.
 <CodeGroup>
 
 ```bash curl
-curl -X POST https://api.papp.sa/api/v1/orders/earning \
+curl -X POST https://business.papp.sa/api/v1/orders/earning \
   -H "x-api-key: $POINTS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{ "phone_number": "512345678", "total_price": 50, "order_number": "A-1", "products": [{"product_name":"Tea","product_price":50,"quantity":1}] }'
 ```
 
 ```javascript Node.js
-await fetch("https://api.papp.sa/api/v1/orders/earning", {
+await fetch("https://business.papp.sa/api/v1/orders/earning", {
   method: "POST",
   headers: {
     "x-api-key": process.env.POINTS_API_KEY,
@@ -86,7 +86,7 @@ await fetch("https://api.papp.sa/api/v1/orders/earning", {
 The redirect-to-checkout flow uses the **Public key** embedded in the URL path. No `x-api-key` header is needed because this endpoint is designed to be called from the customer's browser:
 
 ```bash
-curl -X POST https://api.papp.sa/api/v1/orders/checkout/YOUR_PUBLIC_KEY \
+curl -X POST https://business.papp.sa/api/v1/orders/checkout/YOUR_PUBLIC_KEY \
   -H "Content-Type: application/json" \
   -d '{ "total_price": 150.75, "order_number": "ORD-1", "products": [...] }'
 ```
@@ -119,8 +119,8 @@ Production and sandbox environments use **separate keys**. Keys from one environ
 
 | Environment | Dashboard | API base URL |
 | --- | --- | --- |
-| Production | [business.papp.sa](https://business.papp.sa) | `https://api.papp.sa/api/v1` |
-| Sandbox | Provided on request | Provided with sandbox credentials |
+| Production | [business.papp.sa](https://business.papp.sa) | `https://business.papp.sa/api/v1` |
+| Sandbox | [sandbox.papp.sa](https://sandbox.papp.sa) | `https://sandbox.papp.sa/api/v1` |
 
 To request sandbox credentials, email [support@papp.sa](mailto:support@papp.sa).
 

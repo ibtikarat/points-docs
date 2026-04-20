@@ -19,7 +19,7 @@ Use cancellation when the order should be stopped rather than financially revers
 Example:
 
 ```bash
-curl -X POST https://api.papp.sa/api/v1/orders/550e8400-e29b-41d4-a716-446655440000/cancel \
+curl -X POST https://business.papp.sa/api/v1/orders/550e8400-e29b-41d4-a716-446655440000/cancel \
   -H "x-api-key: $POINTS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{ "reason": "Customer requested cancellation" }'
@@ -39,7 +39,7 @@ Use refund after an order is already settled and value must be returned.
 Example full refund:
 
 ```bash
-curl -X POST https://api.papp.sa/api/v1/orders/550e8400-e29b-41d4-a716-446655440000/refund \
+curl -X POST https://business.papp.sa/api/v1/orders/550e8400-e29b-41d4-a716-446655440000/refund \
   -H "x-api-key: $POINTS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{}'
@@ -48,7 +48,7 @@ curl -X POST https://api.papp.sa/api/v1/orders/550e8400-e29b-41d4-a716-446655440
 Example partial refund:
 
 ```bash
-curl -X POST https://api.papp.sa/api/v1/orders/550e8400-e29b-41d4-a716-446655440000/refund \
+curl -X POST https://business.papp.sa/api/v1/orders/550e8400-e29b-41d4-a716-446655440000/refund \
   -H "x-api-key: $POINTS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

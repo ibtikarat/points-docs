@@ -29,7 +29,7 @@ Sign in to the [Points Business dashboard](https://business.papp.sa) and open **
 All v1 endpoints live under:
 
 ```
-https://api.papp.sa/api/v1
+https://business.papp.sa/api/v1
 ```
 
 Every authenticated request must include:
@@ -47,7 +47,7 @@ The simplest integration point: award points for a completed purchase.
 <CodeGroup>
 
 ```bash curl
-curl -X POST https://api.papp.sa/api/v1/orders/earning \
+curl -X POST https://business.papp.sa/api/v1/orders/earning \
   -H "x-api-key: $POINTS_API_KEY" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
@@ -63,7 +63,7 @@ curl -X POST https://api.papp.sa/api/v1/orders/earning \
 ```
 
 ```javascript Node.js
-const res = await fetch("https://api.papp.sa/api/v1/orders/earning", {
+const res = await fetch("https://business.papp.sa/api/v1/orders/earning", {
   method: "POST",
   headers: {
     "x-api-key": process.env.POINTS_API_KEY,
@@ -89,7 +89,7 @@ console.log(data);
 import os, requests
 
 res = requests.post(
-    "https://api.papp.sa/api/v1/orders/earning",
+    "https://business.papp.sa/api/v1/orders/earning",
     headers={
         "x-api-key": os.environ["POINTS_API_KEY"],
         "Content-Type": "application/json",
@@ -114,7 +114,7 @@ $response = Http::withHeaders([
     'x-api-key'    => env('POINTS_API_KEY'),
     'Content-Type' => 'application/json',
     'Accept'       => 'application/json',
-])->post('https://api.papp.sa/api/v1/orders/earning', [
+])->post('https://business.papp.sa/api/v1/orders/earning', [
     'phone_number' => '512345678',
     'total_price'  => 115.00,
     'order_number' => 'SALE-2024-0021',

@@ -18,7 +18,7 @@ All webhook management endpoints require `x-api-key`.
 ## Create
 
 ```bash
-curl -X POST https://api.papp.sa/api/v1/webhooks \
+curl -X POST https://business.papp.sa/api/v1/webhooks \
   -H "x-api-key: $POINTS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -44,7 +44,7 @@ Response fields include:
 ## List
 
 ```bash
-curl https://api.papp.sa/api/v1/webhooks \
+curl https://business.papp.sa/api/v1/webhooks \
   -H "x-api-key: $POINTS_API_KEY" \
   -H "Accept: application/json"
 ```
@@ -54,7 +54,7 @@ Current backend behavior paginates the results. You can pass `per_page`.
 ## Retrieve one webhook
 
 ```bash
-curl https://api.papp.sa/api/v1/webhooks/550e8400-e29b-41d4-a716-446655440000 \
+curl https://business.papp.sa/api/v1/webhooks/550e8400-e29b-41d4-a716-446655440000 \
   -H "x-api-key: $POINTS_API_KEY" \
   -H "Accept: application/json"
 ```
@@ -62,7 +62,7 @@ curl https://api.papp.sa/api/v1/webhooks/550e8400-e29b-41d4-a716-446655440000 \
 ## Update
 
 ```bash
-curl -X PATCH https://api.papp.sa/api/v1/webhooks/550e8400-e29b-41d4-a716-446655440000 \
+curl -X PATCH https://business.papp.sa/api/v1/webhooks/550e8400-e29b-41d4-a716-446655440000 \
   -H "x-api-key: $POINTS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -74,7 +74,7 @@ curl -X PATCH https://api.papp.sa/api/v1/webhooks/550e8400-e29b-41d4-a716-446655
 ## Delete
 
 ```bash
-curl -X DELETE https://api.papp.sa/api/v1/webhooks/550e8400-e29b-41d4-a716-446655440000 \
+curl -X DELETE https://business.papp.sa/api/v1/webhooks/550e8400-e29b-41d4-a716-446655440000 \
   -H "x-api-key: $POINTS_API_KEY"
 ```
 

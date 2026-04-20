@@ -11,10 +11,10 @@ info:
     email: support@papp.sa
     url: https://docs.papp.sa
 servers:
-  - url: https://api.papp.sa/api
+  - url: https://business.papp.sa/api
     description: Production server
-  - url: http://localhost/api
-    description: Local development server
+  - url: https://sandbox.papp.sa/api
+    description: Sandbox server
 tags:
   - name: Orders
     description: Operations for creating and managing orders
