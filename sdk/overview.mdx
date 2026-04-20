@@ -1,0 +1,66 @@
+---
+title: 'Overview'
+description: 'Official Points SDKs for PHP and Node.js backends'
+---
+
+Points provides official backend SDKs to help you call the same API documented in the API Reference with less boilerplate.
+
+## When to use an SDK
+
+Use an SDK when you want to:
+
+- initialize a typed client once and reuse it across your backend
+- reduce manual request signing and header handling
+- speed up integration in Laravel, PHP, Node.js, Express, or NestJS apps
+- use built-in helpers for webhooks and order actions
+
+Use direct REST calls if your stack does not use PHP or Node.js, or if you prefer to work directly with HTTP.
+
+## Available SDKs
+
+<CardGroup cols={2}>
+  <Card title="PHP SDK" icon="php" href="/sdk/php-sdk">
+    Official SDK for PHP 8.1+ backends, including Laravel projects.
+  </Card>
+  <Card title="Node.js SDK" icon="square-js" href="/sdk/node-sdk">
+    Official SDK for Node.js and TypeScript backends.
+  </Card>
+</CardGroup>
+
+## What stays the same
+
+Both SDKs wrap the same Points API concepts:
+
+- checkout creation
+- earning and redemption order flows
+- order lifecycle actions such as authorize, capture, and complete
+- webhook parsing and verification helpers
+
+## Authentication model
+
+In both SDKs:
+
+- the private key is used for authenticated backend operations
+- the public key is used when a checkout-related endpoint needs it
+- webhook verification uses your webhook secret
+
+<Note>
+The SDKs are for backend usage. Do not expose your private key in frontend code.
+</Note>
+
+## Choose your SDK
+
+<CardGroup cols={2}>
+  <Card title="PHP SDK Quick Start" icon="arrow-right" href="/sdk/php-sdk">
+    Install with Composer and initialize the Points client in your PHP backend.
+  </Card>
+  <Card title="Node.js SDK Quick Start" icon="arrow-right" href="/sdk/node-sdk">
+    Install with npm and use the client in your Node.js or TypeScript service.
+  </Card>
+</CardGroup>
+
+## See also
+
+- [API Reference](/api-reference/introduction)
+- [Checkout Flow](/integration/checkout-flow)
+- [Webhooks Overview](/webhooks/overview)

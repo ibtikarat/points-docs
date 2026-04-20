@@ -1,0 +1,95 @@
+---
+title: 'Customization'
+description: 'Supported configuration and current limits of the widget loader'
+---
+
+The current loader exposes a small, real set of customization options. This page documents those supported options only.
+
+## Supported options
+
+| Option | Type | Notes |
+| --- | --- | --- |
+| `type` | `string` | `points-alert`, `points-card`, or `installments` |
+| `lang` | `string` | `ar` or `en` |
+| `points` | `number` | Used by promo widgets to render the displayed value |
+| `container` | `string \| HTMLElement` | Mount target |
+| `widgetUrl` | `string` | Optional override of the widget host |
+| `parentOrigin` | `string` | Optional postMessage origin override |
+| `callbackUrl` | `string` | Used by the current installments flow |
+
+## Example
+
+```javascript
+PointsWidget.init({
+  type: 'points-card',
+  lang: 'ar',
+  points: 250,
+  container: '#points-widget',
+  widgetUrl: 'https://business.papp.sa'
+});
+```
+
+## Language
+
+Arabic and English are explicitly supported by the widget controller:
+
+```javascript
+PointsWidget.init({
+  type: 'points-alert',
+  lang: 'en',
+  points: 100,
+  container: '#points-widget'
+});
+```
+
+## Base URL override
+
+If you need to point the loader at another environment:
+
+```javascript
+PointsWidget.init({
+  type: 'points-card',
+  lang: 'ar',
+  points: 200,
+  container: '#points-widget',
+  widgetUrl: 'https://business.papp.sa'
+});
+```
+
+## Auto-init attributes
+
+The loader can initialize itself from script attributes:
+
+```html
+<script
+  src="https://business.papp.sa/widget-loader.js"
+  data-type="points-alert"
+  data-lang="ar"
+  data-points="150"
+  data-container="#points-widget">
+</script>
+```
+
+## What is not currently supported in code
+
+- theme switching API
+- size variants as public config
+- CSS variable API
+- a dedicated checkout redemption callback
+- separate widget SDK classes such as `PointsProductWidget` or `PointsCheckoutWidget`
+
+<Warning>
+  Keep the docs aligned with the current loader. If the widget API expands later, add those options only after they exist in `points-backend`.
+</Warning>
+
+## Operational notes
+
+- The loader uses preset heights internally for each widget type
+- The loader injects modal styles and font fallbacks on its own
+- `destroy()` is the supported cleanup path when re-rendering in SPAs
+
+## Related pages
+
+- [Overview](/widgets/overview)
+- [Product Page Widget](/widgets/product-widget)
+- [Checkout Widget](/widgets/checkout-widget)

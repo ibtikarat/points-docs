@@ -1,0 +1,111 @@
+---
+title: 'PHP SDK'
+description: 'Use the official Points PHP SDK in your backend'
+---
+
+The Points PHP SDK is the fastest way to integrate Points into a PHP backend.
+
+- Repository: [points/php-sdk](https://github.com/ibtikarat/php-sdk)
+- Package: `papp/points-sdk`
+- Runtime: PHP 8.1+
+
+## Install
+
+```bash
+composer require papp/points-sdk
+```
+
+## Quick start
+
+```php
+<?php
+
+declare(strict_types=1);
+
+require __DIR__ . '/vendor/autoload.php';
+
+use Papp\Points\Client;
+
+$points = new Client([
+    'private_key' => 'points_private_key_xxx',
+    'public_key' => 'points_public_key_xxx',
+    'base_url' => 'https://business.papp.sa/api/v1',
+    'timeout' => 30,
+    'retries' => 3,
+]);
+```
+
+## Create a checkout
+
+```php
+$checkoutUrl = $points->orders()->createCheckout([
+    'phone_number' => '0555123456',
+    'name' => 'Customer Name',
+    'total_price' => 150.50,
+    'order_number' => 'SHOP-1001',
+    'products' => [
+        [
+            'product_name' => 'T-Shirt',
+            'product_price' => 150.50,
+            'quantity' => 1,
+        ],
+    ],
+]);
+```
+
+## Continue the order lifecycle
+
+```php
+use Papp\Points\Enums\PaymentMethod;
+
+$order = $points->orders()->authorize('550e8400-e29b-41d4-a716-446655440000');
+$order = $points->orders()->capture($order->uuid);
+$order = $points->orders()->complete($order->uuid, PaymentMethod::Visa);
+```
+
+## Configuration
+
+<ParamField body="private_key" type="string" required>
+  Required. Sent as the `x-api-key` header for authenticated backend requests.
+</ParamField>
+
+<ParamField body="public_key" type="string">
+  Optional. Used for checkout-related endpoints when needed.
+</ParamField>
+
+<ParamField body="base_url" type="string" required>
+  Set this explicitly for the environment you want to call.
+</ParamField>
+
+<ParamField body="timeout" type="integer" default="30">
+  Request timeout in seconds.
+</ParamField>
+
+<ParamField body="retries" type="integer" default="3">
+  Number of retry attempts.
+</ParamField>
+
+## Webhooks
+
+Use the built-in webhook handler to parse incoming webhook payloads with your webhook secret:
+
+```php
+use Papp\Points\Webhooks\WebhookHandler;
+
+$handler = new WebhookHandler('your_webhook_secret');
+$event = $handler->parse($rawPayload, $secretHeader, $eventHeader);
+```
+
+## Best fit
+
+Use the PHP SDK when you are building with:
+
+- plain PHP services
+- Laravel applications
+- existing PHP commerce backends that need checkout and order actions
+
+## See also
+
+- [points/php-sdk](https://github.com/ibtikarat/php-sdk)
+- [Integration Guide](/integration/checkout-flow)
+- [Webhooks Handling](/webhooks/handling)

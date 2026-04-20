@@ -1,0 +1,74 @@
+---
+title: 'Implementation Guidelines'
+description: 'Placement, CSP, and integration guardrails for Points widgets'
+---
+
+These guidelines are based on the current iframe-based widget loader shipped from `points-backend`.
+
+## Product surfaces
+
+### Do
+
+- Place `points-alert` or `points-card` below the product price or close to the primary buy CTA
+- Use `lang: 'ar'` on Arabic pages and `lang: 'en'` on English pages
+- Keep enough vertical space for the preset iframe height
+- Test click behavior for `points-card` so the parent modal is not blocked by other overlays
+
+### Do not
+
+- Do not expect `points-alert` to open a modal
+- Do not initialize the widget before the container exists in the DOM
+- Do not hard-code a container height lower than the widget preset height
+
+## Checkout surfaces
+
+### Do
+
+- Use `installments` for checkout-stage messaging in the current implementation
+- Place it before payment or decision-critical content
+- Verify `callbackUrl` behavior in your real checkout flow
+
+### Do not
+
+- Do not document or ship unsupported callbacks such as `onRedeem()` unless the widget implementation exists
+- Do not assume widget behavior from generic BNPL docs; validate against the current loader
+
+## Security and platform behavior
+
+The widget backend currently enforces security headers on `/widget/embed` and `/widget/modal`, including CSP, `X-Content-Type-Options`, `X-XSS-Protection`, and `Referrer-Policy`.
+
+## Content Security Policy
+
+If your storefront uses CSP, allow the widget origin and iframe endpoints:
+
+```text
+script-src 'self' https://business.papp.sa;
+frame-src 'self' https://business.papp.sa;
+connect-src 'self' https://business.papp.sa;
+img-src 'self' data: https:;
+font-src 'self' data: https://business.papp.sa;
+style-src 'self' 'unsafe-inline' https://business.papp.sa;
+```
+
+## Current loader behavior worth testing
+
+- iframe renders with a skeleton loader first
+- height changes are controlled by postMessage resize events
+- modal content is opened in the parent page for `points-card`
+- `destroy()` removes the wrapper and unregisters the message listener
+- auto-init is supported through script `data-*` attributes
+
+## Pre-launch checks
+
+- Widget script loads from the intended environment
+- `type` matches the actual surface (`points-alert`, `points-card`, or `installments`)
+- Arabic pages render RTL correctly
+- Modal works on mobile and desktop
+- CSP does not block fonts, images, iframe, or script loading
+- Checkout-stage widget uses a valid `callbackUrl` when needed
+
+## References
+
+- [Product Page Widget](/widgets/product-widget)
+- [Checkout Widget](/widgets/checkout-widget)
+- [Customization](/widgets/customization)

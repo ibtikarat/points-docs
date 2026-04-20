@@ -1,0 +1,59 @@
+---
+title: 'Overview'
+description: 'Overview of Points promotional widgets'
+---
+
+Points currently exposes an embeddable widget loader that renders promotional messaging in isolated iframes. The current implementation is focused on lightweight storefront messaging for product and checkout surfaces.
+
+## Available widgets
+
+<CardGroup cols={3}>
+  <Card title="Product Page Widget" icon="tag" href="/widgets/product-widget">
+    Promotional message on the product page to show earned points.
+  </Card>
+  <Card title="Checkout Widget" icon="cart-shopping" href="/widgets/checkout-widget">
+    Promotional message shown during checkout or just before payment.
+  </Card>
+  <Card title="Widget Summary" icon="sparkles" href="/widgets/widget-summary">
+    Visual summary page similar to hosted widget documentation landing pages.
+  </Card>
+</CardGroup>
+
+<Note>
+  This section is intentionally compact. The goal is to help merchants implement the widget quickly without spreading the setup over too many pages.
+</Note>
+
+## Preview
+
+### Product page widget
+
+<img src="/images/widgets/product-widget-badge.png" alt="Product widget preview" style={{ width: '100%', maxWidth: '1180px' }} />
+
+### Checkout widget
+
+<img src="/images/widgets/product-widget-popup.png" alt="Checkout widget preview" style={{ width: '100%', maxWidth: '1180px' }} />
+
+## Quick start
+
+```html
+<script src="https://business.papp.sa/widget-loader.js"></script>
+<script>
+  PointsWidget.init({
+    type: 'points-card',
+    lang: 'ar',
+    points: 250,
+    container: '#points-widget'
+  });
+</script>
+```
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Widget Summary" icon="sparkles" href="/widgets/widget-summary">
+    See the visual summary page first.
+  </Card>
+  <Card title="Product Page Widget" icon="tag" href="/widgets/product-widget">
+    Product page implementation.
+  </Card>
+</CardGroup>

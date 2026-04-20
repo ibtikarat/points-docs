@@ -1,0 +1,119 @@
+---
+title: 'Product Page Widget'
+description: 'Arabic product page promotional widget'
+---
+
+This page documents the current Arabic product-page widget implementation for promotional messaging.
+
+- Use `points-alert` for a compact inline message
+- Use `points-card` when you need a richer visual treatment
+
+## Preview
+
+![Product Widget Preview](/images/widgets/product-widget-badge.png)
+
+When `points-card` is clicked, it can open the full promotional popup:
+
+![Product Widget Modal](/images/widgets/checkout-widget.png)
+
+## Recommended placement
+
+Place the widget **directly below the product price**. This is the recommended placement for the current Arabic storefront pattern.
+
+## Script source
+
+Use the current loader:
+
+```html
+<script src="https://business.papp.sa/widget-loader.js"></script>
+```
+
+## Minimal integration
+
+```html
+<div id="points-product-widget"></div>
+<script src="https://business.papp.sa/widget-loader.js"></script>
+<script>
+  PointsWidget.init({
+    type: 'points-card',
+    lang: 'ar',
+    points: 250,
+    container: '#points-product-widget'
+  });
+</script>
+```
+
+## Configuration
+
+<ParamField body="type" type="string" required>
+  Product-page messaging should use either `points-alert` or `points-card`.
+</ParamField>
+
+<ParamField body="lang" type="string" default="ar">
+  This page documents the Arabic storefront version, so use `ar`.
+</ParamField>
+
+<ParamField body="points" type="number" default="0">
+  Numeric points value rendered by the widget content.
+</ParamField>
+
+<ParamField body="container" type="string | HTMLElement" required>
+  Target container selector or DOM element where the iframe wrapper will be mounted.
+</ParamField>
+
+<ParamField body="widgetUrl" type="string">
+  Optional widget base URL. If omitted, the loader attempts to infer it from the script source.
+</ParamField>
+
+<ParamField body="parentOrigin" type="string">
+  Optional parent origin for postMessage; the loader auto-detects this when omitted.
+</ParamField>
+
+<Note>
+  If you need framework-specific wrappers later, we can add them after the base widget behavior is approved.
+</Note>
+
+## Variants
+
+<AccordionGroup>
+  <Accordion title="points-alert">
+    A compact inline message. In the current implementation it can be dismissed and does not open a modal.
+  </Accordion>
+  <Accordion title="points-card">
+    A richer promotional card that can open a parent-page popup with more detail.
+  </Accordion>
+</AccordionGroup>
+
+## Auto-init
+
+The current loader also supports data-attribute initialization:
+
+```html
+<div id="product-widget"></div>
+<script
+  src="https://business.papp.sa/widget-loader.js"
+  data-type="points-alert"
+  data-lang="ar"
+  data-points="300"
+  data-container="#product-widget">
+</script>
+```
+
+## Cleanup
+
+The loader exposes a `destroy()` method:
+
+```javascript
+PointsWidget.destroy();
+```
+
+## Notes
+
+<AccordionGroup>
+  <Accordion title="points-alert disappears on click">
+    That is expected behavior. The current implementation is intentionally dismissible and does not open a modal.
+  </Accordion>
+  <Accordion title="Modal does not open for points-card">
+    Confirm your page allows the parent modal to render and that `/widget/modal` is reachable from the widget origin.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,115 @@
+---
+title: 'Node.js SDK'
+description: 'Use the official Points Node.js SDK in your backend'
+---
+
+The Points Node.js SDK provides a typed client for Node.js and TypeScript backends.
+
+- Repository: [ibtikarat/node-sdk](https://github.com/ibtikarat/node-sdk)
+- Package: `@papp/points-sdk`
+- Runtime: Node.js backend projects
+
+## Install
+
+```bash
+npm install @papp/points-sdk
+```
+
+## Quick start
+
+```ts
+import { PointsClient, PAYMENT_METHOD_CODES } from '@papp/points-sdk';
+
+const points = new PointsClient({
+  apiKey: process.env.POINTS_API_KEY,
+  publicKey: process.env.POINTS_PUBLIC_KEY,
+  environment: 'production',
+});
+```
+
+## Create a checkout
+
+```ts
+const checkout = await points.orders.beginCheckout({
+  total_price: 150.75,
+  order_number: 'ORD-2026-0001',
+  phone_number: '512345678',
+  products: [
+    {
+      product_name: 'Cappuccino',
+      product_price: 18.5,
+      quantity: 2,
+    },
+  ],
+});
+```
+
+## Continue the order lifecycle
+
+```ts
+const order = await points.orders.authorize('550e8400-e29b-41d4-a716-446655440000');
+await points.orders.capture(order.uuid);
+await points.orders.complete(order.uuid, {
+  payment_method: PAYMENT_METHOD_CODES.mada,
+});
+```
+
+## Configuration
+
+```ts
+const client = new PointsClient({
+  apiKey: process.env.POINTS_API_KEY,
+  publicKey: process.env.POINTS_PUBLIC_KEY,
+  environment: 'sandbox',
+  timeoutMs: 30_000,
+  retries: 3,
+});
+```
+
+Defaults from the SDK:
+
+- `environment`: `production`
+- `baseUrl`: `https://business.papp.sa/api/v1`
+- `timeoutMs`: `30000`
+- `retries`: `3`
+
+## Supported areas
+
+The current SDK README documents support for:
+
+- orders
+- checkout start
+- earning order creation
+- order retrieval
+- authorize, capture, complete, cancel
+- shipping status updates
+- refunds
+- webhook management
+- webhook verification helpers
+
+## Webhooks
+
+```ts
+import { parseWebhookEvent } from '@papp/points-sdk';
+
+const event = parseWebhookEvent(rawBody, {
+  expectedSecret: process.env.POINTS_WEBHOOK_SECRET!,
+  secretHeader: request.headers['x-webhook-secret'],
+  eventHeader: request.headers['x-webhook-event'],
+});
+```
+
+## Best fit
+
+Use the Node.js SDK when you are building with:
+
+- Node.js services
+- Express backends
+- NestJS applications
+- TypeScript-first backend stacks
+
+## See also
+
+- [Node.js SDK repository](https://github.com/ibtikarat/node-sdk)
+- [API Reference](/api-reference/introduction)
+- [Order Lifecycle](/integration/order-lifecycle)

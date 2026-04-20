@@ -1,0 +1,55 @@
+---
+title: 'Checkout Widget'
+description: 'Current checkout promotional widget'
+---
+
+The current backend implementation does not expose a separate checkout widget SDK. The real implementation available today uses the `installments` type through the same loader.
+
+The visual treatment shown below is the compact Arabic checkout banner used for promotional messaging during checkout.
+
+## Preview
+
+![Checkout Widget Preview](/images/widgets/product-widget-popup.png)
+
+## Minimal integration
+
+```html
+<div id="points-checkout-widget"></div>
+<script src="https://business.papp.sa/widget-loader.js"></script>
+<script>
+  PointsWidget.init({
+    type: 'installments',
+    lang: 'ar',
+    container: '#points-checkout-widget',
+    callbackUrl: 'https://merchant.example.com/checkout/return'
+  });
+</script>
+```
+
+<Note>
+  This page stays intentionally compact. The current implementation is best documented with one clear storefront example until the widget API grows further.
+</Note>
+
+## Supported options
+
+<ParamField body="type" type="string" required>
+  Use `installments` for the current checkout-stage implementation.
+</ParamField>
+
+<ParamField body="lang" type="string" default="ar">
+  Use `ar` for the Arabic storefront version.
+</ParamField>
+
+<ParamField body="container" type="string | HTMLElement" required>
+  Container selector or DOM element where the widget iframe will mount.
+</ParamField>
+
+<ParamField body="callbackUrl" type="string">
+  Optional URL used by the current installments view when continuing shopping outside mobile webviews.
+</ParamField>
+
+## Placement guidance
+
+- Put the widget near the top of checkout or above payment methods
+- Avoid placing it after the final confirmation CTA
+- Test it on mobile widths because the loader uses different preset heights for mobile and desktop

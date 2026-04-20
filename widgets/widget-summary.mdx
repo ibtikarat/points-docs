@@ -1,0 +1,56 @@
+---
+title: 'Widget Summary'
+description: 'Visual summary of the Points promotional widgets'
+---
+
+This page gives a quick visual summary of the current promotional widgets, similar to hosted widget documentation landing pages.
+
+## Product page widget
+
+![Product widget summary](/images/widgets/product-widget-badge.png)
+
+- Display directly below the product price
+- Shows the earned points message
+- Can be rendered as `points-alert` or `points-card`
+
+## Checkout widget
+
+![Product popup summary](/images/widgets/product-widget-popup.png)
+
+- Best placed near the top of checkout
+- Displays the promotional message in a compact checkout bar
+- Supports Arabic storefront messaging
+
+## Product widget popup
+
+![Checkout widget summary](/images/widgets/checkout-widget.png)
+
+- Appears after clicking the richer product widget experience
+- Used to explain the reward in more detail
+- Best for a standalone promotional explanation flow
+
+## Core snippet
+
+```html
+<div id="points-widget"></div>
+<script src="https://business.papp.sa/widget-loader.js"></script>
+<script>
+  PointsWidget.init({
+    type: 'points-card',
+    lang: 'ar',
+    points: 199,
+    container: '#points-widget'
+  });
+</script>
+```
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Product Page Widget" icon="tag" href="/widgets/product-widget">
+    Product page implementation details.
+  </Card>
+  <Card title="Checkout Widget" icon="cart-shopping" href="/widgets/checkout-widget">
+    Checkout placement and usage.
+  </Card>
+</CardGroup>
