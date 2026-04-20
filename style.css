@@ -175,3 +175,14 @@ html:not(.dark) [class*="border-primary"] {
     transparent 70%
   );
 }
+
+/* Local-only: hide Mintlify Ask AI UI */
+a[href*="?assistant=open"],
+a[href*="?assistant="],
+button[aria-label*="Ask AI" i],
+button[aria-label*="assistant" i],
+[data-testid*="assistant" i],
+[class*="assistant-bar" i],
+[class*="assistant-fab" i] {
+  display: none !important;
+}
