@@ -7,43 +7,43 @@ This is the minimum production checklist for a safe Points launch. Use it before
 
 ## Credentials and environments
 
-- [ ] Production **Private key** loaded from secrets manager (not `.env` in git)
-- [ ] Production **Public key** configured in the checkout-session creator
-- [ ] Sandbox keys removed from production runtime
-- [ ] Merchant capabilities confirmed: earn-only, checkout, refunds, shipping updates as applicable
+- Production **Private key** loaded from secrets manager (not `.env` in git)
+- Production **Public key** configured in the checkout-session creator
+- Sandbox keys removed from production runtime
+- Merchant capabilities confirmed: earn-only, checkout, refunds, shipping updates as applicable
 
 ## Webhooks and callbacks
 
-- [ ] Webhook endpoint reachable over HTTPS with a valid certificate
-- [ ] `X-Webhook-Secret` verified with constant-time comparison
-- [ ] Webhook handler responds `2xx` quickly and offloads heavy work to a queue
-- [ ] Webhook handler idempotent on `(order.id, event)`
-- [ ] Callback page implemented, but not used as the source of truth
-- [ ] Monitoring in place for webhook verification failures
+- Webhook endpoint reachable over HTTPS with a valid certificate
+- `X-Webhook-Secret` verified with constant-time comparison
+- Webhook handler responds `2xx` quickly and offloads heavy work to a queue
+- Webhook handler idempotent on `(order.id, event)`
+- Callback page implemented, but not used as the source of truth
+- Monitoring in place for webhook verification failures
 
 ## Order operations
 
-- [ ] Your system stores Points `uuid` for every created order
-- [ ] Your internal `order_number` is unique and stable
-- [ ] Refund flow tested if you support returns
-- [ ] Cancel flow tested if you support cancellation before fulfilment
-- [ ] Shipping status update flow tested if you fulfil physical goods
+- Your system stores Points `uuid` for every created order
+- Your internal `order_number` is unique and stable
+- Refund flow tested if you support returns
+- Cancel flow tested if you support cancellation before fulfilment
+- Shipping status update flow tested if you fulfil physical goods
 
 ## Logging and observability
 
-- [ ] Logging redacts `x-api-key`, `X-Webhook-Secret`, and PII
-- [ ] Runbook for key rotation reviewed
-- [ ] Reconciliation job (nightly `GET /v1/orders/{uuid}`) in place
-- [ ] Alerting on non-2xx from Points and on webhook 5xx from your side
-- [ ] Alerting on sudden spikes of `400`, `403`, `422`, or `429` responses
+- Logging redacts `x-api-key`, `X-Webhook-Secret`, and PII
+- Runbook for key rotation reviewed
+- Reconciliation job (nightly `GET /v1/orders/{uuid}`) in place
+- Alerting on non-2xx from Points and on webhook 5xx from your side
+- Alerting on sudden spikes of `400`, `403`, `422`, or `429` responses
 
 ## Mandatory smoke tests
 
-- [ ] Sandbox smoke test completed end-to-end for each flow you use
-- [ ] First production earning order tested and reconciled
-- [ ] First production checkout order tested and reconciled
-- [ ] First production webhook received, verified, and persisted
-- [ ] Refund tested in the same environment you will operate in, if business policy allows
+- Sandbox smoke test completed end-to-end for each flow you use
+- First production earning order tested and reconciled
+- First production checkout order tested and reconciled
+- First production webhook received, verified, and persisted
+- Refund tested in the same environment you will operate in, if business policy allows
 
 ## Launch day recommendations
 
