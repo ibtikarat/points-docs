@@ -63,7 +63,6 @@
           {
             "group": "Integration Guide",
             "pages": [
-              "integration/api-v1-contract",
               "integration/checkout-flow",
               "integration/earn-only",
               "integration/redeem-flow",

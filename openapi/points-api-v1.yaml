@@ -101,11 +101,16 @@ paths:
               $ref: '#/components/schemas/EarningOrderRequest'
       responses:
         '200':
-          description: Order created successfully.
+          description: >
+            Order created successfully. When the customer's account is not yet
+            activated, a `pending_client_activation` payload is returned instead
+            of a full order resource.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrderResponse'
+                oneOf:
+                  - $ref: '#/components/schemas/OrderResponse'
+                  - $ref: '#/components/schemas/PendingEarningResponse'
         '400':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -515,7 +520,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/ValidationErrorResponse'
   schemas:
     ApiMetadata:
       type: object
@@ -856,10 +861,24 @@ components:
           nullable: true
           description: Human-readable relative time (e.g. "2 hours ago").
           example: 2 hours ago
+        settlement_status:
+          type: string
+          nullable: true
+          description: Settlement state of the order (backed enum value of OrderSettlementStatus).
+          example: settled
+        status:
+          type: integer
+          nullable: true
+          description: Shipping status as a backed integer enum value of OrderShippingStatus.
+          example: 1
         created_at:
           type: string
           format: date-time
           example: 2024-12-23T10:00:00Z
+        updated_at:
+          type: string
+          format: date-time
+          example: 2024-12-23T15:30:00Z
         items:
           type: array
           nullable: true
@@ -966,6 +985,75 @@ components:
     EmptyResponse:
       allOf:
         - $ref: '#/components/schemas/ApiMetadata'
+    ValidationErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+        - appended_data
+      properties:
+        status:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: The given data was invalid.
+        appended_data:
+          type: object
+          additionalProperties: true
+          example: {}
+        errors:
+          type: object
+          description: >
+            Field-level validation errors. Keys are field names (dot-notation for
+            nested fields, e.g. `products.0.product_price`). Values are arrays of
+            error message strings.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            total_price:
+              - The total price field is required.
+            products.0.quantity:
+              - The quantity must be at least 1.
+    PendingEarningResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiMetadata'
+        - type: object
+          required:
+            - data
+          properties:
+            data:
+              type: object
+              required:
+                - pending_client_activation
+                - pending_earning_order
+              properties:
+                pending_client_activation:
+                  type: boolean
+                  description: >
+                    Always `true` in this response variant. Indicates the customer
+                    has not yet activated their Points account.
+                  example: true
+                pending_earning_order:
+                  type: object
+                  description: Snapshot of the queued earning order.
+                  properties:
+                    id:
+                      type: integer
+                      example: 99
+                    merchant_order_number:
+                      type: string
+                      example: SALE-2024-0021
+                    total_price:
+                      type: number
+                      format: float
+                      example: 115.0
+                    total_points:
+                      type: number
+                      format: float
+                      example: 1150
     ErrorResponse:
       type: object
       required:
