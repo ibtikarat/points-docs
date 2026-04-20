@@ -90,14 +90,14 @@ On the webhook side, the same `(order.id, event)` pair may be delivered more tha
 
 <AccordionGroup>
   <Accordion title="✅ Production readiness">
-    - [ ] Private key stored in a secrets manager
-    - [ ] No API key in any committed file or client bundle
-    - [ ] HTTPS enforced on your webhook endpoint
-    - [ ] `X-Webhook-Secret` verified on every incoming webhook with constant-time comparison
-    - [ ] Webhook handler returns 2xx within 2 seconds and processes asynchronously
-    - [ ] Webhook handler is idempotent on `(order.id, event)`
-    - [ ] Logging redacts `x-api-key`, `X-Webhook-Secret`, and PII
-    - [ ] Key rotation runbook documented internally
+    - Private key stored in a secrets manager
+    - No API key in any committed file or client bundle
+    - HTTPS enforced on your webhook endpoint
+    - `X-Webhook-Secret` verified on every incoming webhook with constant-time comparison
+    - Webhook handler returns 2xx within 2 seconds and processes asynchronously
+    - Webhook handler is idempotent on `(order.id, event)`
+    - Logging redacts `x-api-key`, `X-Webhook-Secret`, and PII
+    - Key rotation runbook documented internally
   </Accordion>
 </AccordionGroup>
 
