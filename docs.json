@@ -63,6 +63,7 @@
           {
             "group": "Integration Guide",
             "pages": [
+              "integration/api-v1-contract",
               "integration/checkout-flow",
               "integration/earn-only",
               "integration/redeem-flow",
@@ -84,7 +85,6 @@
             "group": "Testing",
             "pages": [
               "testing/credentials",
-              "testing/postman-collection",
               "testing/go-live-checklist"
             ]
           }
