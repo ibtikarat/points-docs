@@ -16,7 +16,7 @@ sequenceDiagram
     participant MerchantFE as Your storefront
     participant MerchantBE as Your backend
     participant Points as Points API
-    participant PointsCheckout as business.papp.sa
+    participant PointsCheckout as pay.papp.sa
 
     Customer->>MerchantFE: Proceeds to checkout
     MerchantFE->>MerchantBE: Request Points checkout URL
@@ -72,7 +72,7 @@ curl -X POST https://business.papp.sa/api/v1/orders/checkout/YOUR_PUBLIC_KEY \
   "message": "",
   "appended_data": {},
   "data": {
-    "checkout_url": "https://business.papp.sa/session/abcd1234"
+    "checkout_url": "https://pay.papp.sa/session/abcd1234"
   }
 }
 ```

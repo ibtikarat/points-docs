@@ -72,29 +72,30 @@
             ]
           },
           {
-            "group": "SDKs",
-            "pages": [
-              "sdk/overview",
-              "sdk/php-sdk",
-              "sdk/node-sdk"
-            ]
-          },
-          {
-            "group": "Widgets Messaging",
-            "pages": [
-              "widgets/overview",
-              "widgets/widget-summary",
-              "widgets/product-widget",
-              "widgets/checkout-widget"
-            ]
-          },
-          {
             "group": "Webhooks",
             "pages": [
               "webhooks/overview",
               "webhooks/events",
               "webhooks/management",
               "webhooks/handling"
+            ]
+          },
+          {
+            "group": "Widgets",
+            "pages": [
+              "widgets/overview",
+              "widgets/product-widget",
+              "widgets/checkout-widget",
+              "widgets/customization",
+              "widgets/implementation-guidelines",
+              "widgets/widget-playground"
+            ]
+          },
+          {
+            "group": "SDKs",
+            "pages": [
+              "sdk/overview",
+              "sdk/php-sdk"
             ]
           },
           {

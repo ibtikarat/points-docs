@@ -1,0 +1,131 @@
+---
+title: 'Widget Playground'
+description: 'Interactive test page for all Points widget types'
+---
+
+The widget playground at [dev.papp.sa/widget-test](https://dev.papp.sa/widget-test) lets you run every widget type in a browser without writing any integration code. Use it to verify widget behavior before committing to a storefront implementation.
+
+<Note>
+  The playground loads `widget-loader.js` from `https://dev.papp.sa`. It is a development environment — use it for exploration and debugging only, not for production verification.
+</Note>
+
+## What you can test
+
+The page exposes eight independent test scenarios, each running in its own container.
+
+### Test 1 — `points-alert` (programmatic)
+
+Renders a compact inline alert widget using `PointsWidget.init()`. Clicking the widget or its close button dismisses it entirely — no modal opens. This is expected behavior for `points-alert`.
+
+```javascript
+PointsWidget.init({
+  type: 'points-alert',
+  lang: 'ar',
+  points: 150,
+  container: '#widget-1'
+});
+```
+
+### Test 2 — `points-card` with parent modal
+
+The most important test on the page. Clicking the card opens a modal in the **parent page** (outside the iframe), the same pattern used by Tabby and similar widgets. Use this to verify that your storefront's CSP and overlay layers do not block the modal.
+
+```javascript
+PointsWidget.init({
+  type: 'points-card',
+  lang: 'ar',
+  points: 250,
+  container: '#widget-2',
+  widgetUrl: 'https://dev.papp.sa'
+});
+```
+
+### Test 3 — `installments` with callback URL
+
+Renders the checkout-stage installments widget with a `callbackUrl`. Use this to validate the callback redirect before wiring it to your real checkout flow.
+
+```javascript
+PointsWidget.init({
+  type: 'installments',
+  lang: 'ar',
+  container: '#widget-3',
+  callbackUrl: 'https://example.com/callback'
+});
+```
+
+### Test 4 — Auto-initialization via data attributes
+
+The loader can be initialized without writing any JavaScript — attach `data-*` attributes directly on the `<script>` tag:
+
+```html
+<script
+  src="https://dev.papp.sa/widget-loader.js"
+  data-type="points-alert"
+  data-lang="ar"
+  data-points="300"
+  data-container="#widget-4">
+</script>
+```
+
+This is the recommended pattern for simple, no-JS storefronts.
+
+### Test 5 — Multiple widgets on the same page
+
+Runs `points-alert` and `points-card` side by side in two separate containers. Confirms that multiple `PointsWidget.init()` calls do not interfere with each other.
+
+### Test 6 — Dynamic points update
+
+Initializes a widget with `points: 100`, then updates the displayed value to `200` and `500` without re-mounting the widget. Use this to test that your dynamic pricing or cart-total flow passes updated points values correctly.
+
+### Test 7 — `points-alert` close behavior
+
+Tests the close button (×) on the alert widget. When triggered:
+
+1. The widget removes itself from inside the iframe.
+2. A `postMessage` is sent: `{ action: "hide-alert-widget", type: "points-alert" }`.
+3. The parent page removes the alert container.
+
+Clicking anywhere on the `points-alert` body triggers the same hide flow — no modal opens.
+
+### Test 8 — CORS headers
+
+Fetches `/widget/modal` and loads an image and font cross-origin, then logs the `Access-Control-Allow-Origin` header to the console. Run this if you are seeing CORS errors in your environment:
+
+```javascript
+fetch('https://dev.papp.sa/widget/modal?type=points-card&lang=ar')
+  .then(response => {
+    console.log('CORS:', response.headers.get('Access-Control-Allow-Origin'));
+  });
+```
+
+## Buttons on each test
+
+| Button | What it does |
+| --- | --- |
+| **Initialize Widget** | Calls `PointsWidget.init()` for that test's config |
+| **Destroy Widget** | Calls `PointsWidget.destroy()` and removes the iframe |
+| **Hard Reload** | Clears the iframe cache and re-fetches widget assets fresh |
+
+## Useful for
+
+- Confirming a widget type renders in your browser before adding it to your storefront
+- Debugging CSP issues (open DevTools → Console while running Test 8)
+- Checking modal behavior when your page has custom overlay z-index stacking
+- Verifying `destroy()` cleanup works in your SPA re-render cycle
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Product Page Widget" icon="tag" href="/widgets/product-widget">
+    Storefront implementation for product surfaces.
+  </Card>
+  <Card title="Checkout Widget" icon="cart-shopping" href="/widgets/checkout-widget">
+    Checkout-stage installments widget.
+  </Card>
+  <Card title="Customization" icon="sliders" href="/widgets/customization">
+    All supported `PointsWidget.init()` options.
+  </Card>
+  <Card title="Implementation Guidelines" icon="shield-check" href="/widgets/implementation-guidelines">
+    CSP, placement, and pre-launch checks.
+  </Card>
+</CardGroup>
