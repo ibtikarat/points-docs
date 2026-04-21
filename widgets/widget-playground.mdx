@@ -3,10 +3,10 @@ title: 'Widget Playground'
 description: 'Interactive test page for all Points widget types'
 ---
 
-The widget playground at [dev.papp.sa/widget-test](https://dev.papp.sa/widget-test) lets you run every widget type in a browser without writing any integration code. Use it to verify widget behavior before committing to a storefront implementation.
+The widget playground at [sandbox.papp.sa/widget-test](https://sandbox.papp.sa/widget-test) lets you run every widget type in a browser without writing any integration code. Use it to verify widget behavior before committing to a storefront implementation.
 
 <Note>
-  The playground loads `widget-loader.js` from `https://dev.papp.sa`. It is a development environment — use it for exploration and debugging only, not for production verification.
+  The playground loads `widget-loader.js` from `https://sandbox.papp.sa`. It is a sandbox environment — use it for exploration and debugging only, not for production verification.
 </Note>
 
 ## What you can test
@@ -36,7 +36,7 @@ PointsWidget.init({
   lang: 'ar',
   points: 250,
   container: '#widget-2',
-  widgetUrl: 'https://dev.papp.sa'
+  widgetUrl: 'https://sandbox.papp.sa'
 });
 ```
 
@@ -59,7 +59,7 @@ The loader can be initialized without writing any JavaScript — attach `data-*`
 
 ```html
 <script
-  src="https://dev.papp.sa/widget-loader.js"
+  src="https://sandbox.papp.sa/widget-loader.js"
   data-type="points-alert"
   data-lang="ar"
   data-points="300"
@@ -92,7 +92,7 @@ Clicking anywhere on the `points-alert` body triggers the same hide flow — no 
 Fetches `/widget/modal` and loads an image and font cross-origin, then logs the `Access-Control-Allow-Origin` header to the console. Run this if you are seeing CORS errors in your environment:
 
 ```javascript
-fetch('https://dev.papp.sa/widget/modal?type=points-card&lang=ar')
+fetch('https://sandbox.papp.sa/widget/modal?type=points-card&lang=ar')
   .then(response => {
     console.log('CORS:', response.headers.get('Access-Control-Allow-Origin'));
   });
