@@ -25,6 +25,10 @@ The check runs after API-key authentication on every authenticated API request:
 
 The Public Checkout endpoint (`POST /v1/orders/checkout/{publicKey}`) is **not** affected by IP whitelisting — it is designed to be called from the customer's browser, where the source IP is unpredictable.
 
+<Note>
+  Points may itself need to call its own API on your behalf (e.g. background jobs that touch shared infrastructure). Such server-internal calls automatically bypass your whitelist — you do not need to add any Points-side IPs to make them work.
+</Note>
+
 ## Configure the whitelist
 
 <Steps>

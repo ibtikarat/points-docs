@@ -57,6 +57,7 @@
             "group": "Authentication",
             "pages": [
               "authentication/api-keys",
+              "authentication/ip-whitelisting",
               "authentication/security"
             ]
           },
