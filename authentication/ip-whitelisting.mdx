@@ -1,0 +1,117 @@
+---
+title: 'IP Whitelisting'
+description: 'Restrict which IP addresses can call the Points API on behalf of your merchant'
+---
+
+IP whitelisting is an **optional second factor** on top of your Private API key. When enabled, requests authenticated with your key are accepted only if they originate from an IP address you've explicitly approved. A leaked key alone is no longer enough to call the API as your merchant — the attacker would also need to be calling from one of your whitelisted IPs.
+
+<Note>
+  This page is about the **inbound** direction — controlling who can call the Points API as your merchant. It is unrelated to firewalling **your** webhook endpoint, which is covered in [Security best practices](/authentication/security#webhook-security).
+</Note>
+
+## How it works
+
+The check runs after API-key authentication on every authenticated API request:
+
+| Whitelist state for your merchant | Behaviour |
+| --- | --- |
+| **No whitelist configured** (default) | All IPs allowed. No change in behaviour. |
+| **Whitelist configured with one or more IPs** | Only requests from those IPs are accepted. Everything else returns `403`. |
+| **Whitelist configured but empty** | **All external requests are blocked.** Treat this as a kill-switch state and avoid it in production. |
+
+<Warning>
+  Adding any IP to the whitelist activates the restriction. Once active, an empty list blocks every external request. Always remove the whitelist record entirely (rather than emptying it) if you want to fall back to "no restriction".
+</Warning>
+
+The Public Checkout endpoint (`POST /v1/orders/checkout/{publicKey}`) is **not** affected by IP whitelisting — it is designed to be called from the customer's browser, where the source IP is unpredictable.
+
+## Configure the whitelist
+
+<Steps>
+  <Step title="Sign in to the Business dashboard">
+    Open [business.papp.sa](https://business.papp.sa) and sign in.
+  </Step>
+  <Step title="Open Settings → IP Whitelisting">
+    The page lists every IP currently allowed for your merchant.
+  </Step>
+  <Step title="Add the IPs of every server that calls Points">
+    Add the public egress IP of each backend service that hits the Points API on your behalf — production app servers, queue workers, scheduled jobs, etc. Add IPs **before** removing the old ones if you're migrating infrastructure.
+  </Step>
+  <Step title="Verify from each environment">
+    Make a test call from every environment after saving. A `403` means that environment's egress IP isn't on the list yet.
+  </Step>
+</Steps>
+
+## Blocked-request response
+
+When a request comes in from an IP that isn't on the list, the API returns:
+
+```json
+{
+  "status": false,
+  "message": "Your IP address is not allowed to access this API.",
+  "appended_data": {}
+}
+```
+
+with HTTP status `403`.
+
+This is distinct from `400 Invalid or inactive API key` — if you see the `403` above, your key is valid but the **source IP** is the problem.
+
+## Finding your egress IP
+
+Your Points-bound traffic leaves your infrastructure from a public NAT/egress IP, which is usually different from your application server's private address. To find it, run a request to an echo service **from the same host that calls Points**:
+
+<CodeGroup>
+
+```bash curl
+curl https://ifconfig.me
+```
+
+```javascript Node.js
+const res = await fetch("https://ifconfig.me");
+console.log(await res.text());
+```
+
+```php PHP
+echo file_get_contents('https://ifconfig.me');
+```
+
+</CodeGroup>
+
+If your platform autoscales across multiple egress IPs (e.g. a cloud NAT gateway with a pool, or AWS Lambda), whitelist **every** IP in the pool, or place a static-IP NAT in front of the workers that call Points.
+
+## Operational tips
+
+<AccordionGroup>
+  <Accordion title="Add new IPs before removing old ones">
+    During an infrastructure migration, add the new server's IP first and confirm traffic is succeeding from it before removing the old IP. The whitelist is enforced immediately on save, so a wrong order causes a hard outage.
+  </Accordion>
+  <Accordion title="Document why each IP is on the list">
+    A bare list of IPs rots quickly. Keep a short internal note (in your runbook, ticket, or wiki) mapping each whitelisted IP to the service it represents, so a future engineer can prune safely.
+  </Accordion>
+  <Accordion title="Don't whitelist developer laptops in production">
+    Use the **sandbox** environment for development. Production whitelists should contain only stable server egress IPs.
+  </Accordion>
+  <Accordion title="Watch for 403 spikes after deploys">
+    A sudden spike in `403 Your IP address is not allowed` after an infra change usually means the egress IP changed (new NAT, new region, new Kubernetes node pool, etc.). Treat it as a config drift signal.
+  </Accordion>
+  <Accordion title="Rotate keys AND review IPs after a suspected breach">
+    A leaked key is mostly defanged by IP whitelisting, but rotate the key anyway and audit the IP list for entries you don't recognise.
+  </Accordion>
+</AccordionGroup>
+
+## Disabling the whitelist
+
+Remove every entry **and** delete the whitelist record itself from the dashboard. Leaving an empty whitelist record in place blocks all external traffic — it does **not** revert to "no restriction".
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="API keys" icon="key" href="/authentication/api-keys">
+    How keys are issued, used, and rotated.
+  </Card>
+  <Card title="Security best practices" icon="shield" href="/authentication/security">
+    TLS, webhook secrets, logging, and broader hardening guidance.
+  </Card>
+</CardGroup>
