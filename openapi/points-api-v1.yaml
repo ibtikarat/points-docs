@@ -20,6 +20,8 @@ tags:
     description: Operations for creating and managing orders
   - name: Webhooks
     description: CRUD operations for merchant webhooks
+  - name: Integration
+    description: External-platform toggle state (e.g. Matajer's "ربط بوينتس" switch)
 paths:
   /v1/orders/checkout/{publicKey}:
     post:
@@ -461,6 +463,55 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /v1/integration/status:
+    post:
+      tags:
+        - Integration
+      summary: Toggle integration active state
+      description: |
+        Mirrors the merchant's external-platform toggle (Matajer's "ربط بوينتس"
+        switch today, any other channel tomorrow) into our DB. Flips the
+        `integration_active` flag on the API key that authenticated the
+        request — driving the green/red dot on our `/merchants` listing and
+        any business logic that needs to know "is this merchant currently
+        toggled on?"
+
+        Distinct from `Key.status`, which is the auth-validity flag (admin
+        can kill a leaked key without touching the merchant's intent). The
+        two flags compose: a merchant is shown as **active** only when
+        both are `true`.
+
+        Idempotent — sending `{ "active": true }` on an already-active key
+        (or vice-versa) is a no-op that still returns `200`. Safe to retry.
+      operationId: setIntegrationStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntegrationStatusRequest'
+            examples:
+              enable:
+                summary: Merchant toggled the integration ON
+                value:
+                  active: true
+              disable:
+                summary: Merchant toggled the integration OFF
+                value:
+                  active: false
+      responses:
+        '200':
+          description: Status accepted (idempotent — current state shown in `data.active`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntegrationStatusResponse'
+        '400':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          description: Too many toggle calls — endpoint is rate-limited to 30/min per key.
 components:
   securitySchemes:
     ApiKeyAuth:
@@ -759,8 +810,12 @@ components:
           example: "2"
     ShippingStatusUpdateRequest:
       type: object
-      required:
-        - status
+      description: >
+        Update payload for `POST /v1/orders/{uuid}/status`. At least
+        ONE of `status`, `name_ar`, or `name_en` is required — a fully
+        blank body returns 422. All three may be sent together; the
+        canonical `status` enum and the custom bilingual label update
+        atomically.
       properties:
         status:
           type: string
@@ -771,8 +826,30 @@ components:
             - delivery_is_in_progress
             - delivered
             - cancelled
-          description: Shipping status. Independent of the financial `order_status`.
+          description: >
+            Canonical shipping-status enum value. Drives dashboard
+            badges + the `shipping_status_updated` webhook. Independent
+            of the financial `order_status`.
           example: ready_shipping
+        name_ar:
+          type: string
+          maxLength: 120
+          description: >
+            Free-form Arabic label. Stored under `custom_status.ar` on
+            the order. When `name_en` is omitted, this value is
+            auto-translated to English via Google Translate (cached
+            30 days). Lets external fulfilment platforms (Salla,
+            Zid, custom WMS) attach their own status names without
+            extending the canonical enum.
+          example: خرج للتوصيل
+        name_en:
+          type: string
+          maxLength: 120
+          description: >
+            Free-form English label. Stored under `custom_status.en`.
+            Auto-translates from `name_ar` when omitted. Both fields
+            together skip translation.
+          example: Out for delivery
     CancelRequest:
       type: object
       properties:
@@ -824,6 +901,33 @@ components:
             - partially_refunded
           description: Financial state of the order.
           example: approved
+        status_label:
+          type: string
+          description: >
+            Resolved display label for the shipping status. Prefers
+            the merchant's `custom_status` value in the request's
+            locale when set, otherwise falls back to the canonical
+            enum label ("New", "Delivered", …). **Render this
+            directly** — locale switching + custom-label fallback are
+            already applied server-side.
+          example: خرج للتوصيل
+        custom_status:
+          type: object
+          nullable: true
+          description: >
+            Merchant-defined free-form shipping label, populated by
+            sending `name_ar` / `name_en` to
+            `POST /v1/orders/{uuid}/status`. `null` when the merchant
+            hasn't set a custom label — `status_label` falls back to
+            the canonical enum text. Useful for multi-locale clients
+            that switch language without refetching.
+          properties:
+            ar:
+              type: string
+              example: خرج للتوصيل
+            en:
+              type: string
+              example: Out for delivery
         order_number:
           type: string
           example: ORD-2024-001234
@@ -985,6 +1089,44 @@ components:
     EmptyResponse:
       allOf:
         - $ref: '#/components/schemas/ApiMetadata'
+    IntegrationStatusRequest:
+      type: object
+      required:
+        - active
+      properties:
+        active:
+          type: boolean
+          description: |
+            `true` when the merchant just toggled the integration ON in the
+            external platform (Matajer's "ربط بوينتس" switch today),
+            `false` on toggle OFF.
+          example: true
+    IntegrationStatusResponse:
+      type: object
+      required:
+        - status
+        - message
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - active
+          properties:
+            active:
+              type: boolean
+              description: The resolved `integration_active` flag after this call (matches the request body in success cases).
+              example: true
+        status:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Integration status updated
+        appended_data:
+          type: array
+          items: {}
+          example: []
     ValidationErrorResponse:
       type: object
       required:

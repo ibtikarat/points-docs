@@ -33,3 +33,82 @@ For physical-goods orders, update via `POST /v1/orders/{uuid}/status`.
 <Note>
   Keep shipping status separate from financial status in your own system. `order_status` tells you whether the order was approved, captured, cancelled, or refunded; `status` tells you where fulfilment stands.
 </Note>
+
+## Custom status labels
+
+Different fulfilment platforms (Salla, Zid, custom WMS, …) use status names that don't map cleanly onto the six built-in stages above. `POST /v1/orders/{uuid}/status` accepts **two optional fields** alongside the canonical `status` enum so you can attach your own bilingual label to an order without us having to extend the enum:
+
+| Field | Required? | Notes |
+| --- | --- | --- |
+| `status` | optional* | One of the canonical enum values listed above. Updates the canonical `status` column + fires the `shipping_status_updated` webhook. |
+| `name_ar` | optional* | Free-form Arabic label, up to 120 chars. Stored on `custom_status.ar`. |
+| `name_en` | optional* | Free-form English label, up to 120 chars. Stored on `custom_status.en`. |
+
+<Note>
+  *At least **one** of `status`, `name_ar`, or `name_en` must be supplied — a fully blank payload returns `422`. All three can be sent together; the canonical enum and the custom label update atomically.
+</Note>
+
+### Auto-translation
+
+When only one of `name_ar` / `name_en` is supplied, the missing locale is auto-filled via Google Translate so `custom_status` always has both locales. Translations are cached server-side for 30 days keyed on `(target, text)` — sending the same label across 100 orders only hits Google once.
+
+If the translator is unreachable (quota / network), the supplied locale is copied into the missing slot rather than leaving the row half-populated. The fallback is logged at `WARNING` so the merchant dashboard can surface a future "translation degraded" badge.
+
+### Examples
+
+<CodeGroup>
+```bash Arabic only (auto-translates to English)
+curl -X POST https://business.papp.sa/api/v1/orders/{uuid}/status \
+  -H "x-api-key: $POINTS_PRIVATE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name_ar":"خرج للتوصيل"}'
+```
+
+```bash Both locales (no translation)
+curl -X POST https://business.papp.sa/api/v1/orders/{uuid}/status \
+  -H "x-api-key: $POINTS_PRIVATE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name_ar":"خرج للتوصيل",
+    "name_en":"Out for delivery"
+  }'
+```
+
+```bash Enum + custom label together
+curl -X POST https://business.papp.sa/api/v1/orders/{uuid}/status \
+  -H "x-api-key: $POINTS_PRIVATE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status":"delivery_is_in_progress",
+    "name_ar":"خرج للتوصيل",
+    "name_en":"Out for delivery"
+  }'
+```
+</CodeGroup>
+
+### Response fields
+
+Every `Order` response exposes the resolved label so consumers don't have to duplicate the fallback logic client-side:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `status` | `string` | Canonical enum value (`new` / `license_in_progress` / …). |
+| `status_label` | `string` | Resolved display label — prefers `custom_status[<current locale>]` when set, falls back to the enum label otherwise. **Render this directly.** |
+| `custom_status` | `object \| null` | `{ ar, en }` pair when the merchant has set a custom label; `null` otherwise. Useful for multi-locale clients that switch language without refetching. |
+
+```json
+{
+  "id": 1042,
+  "uuid": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "delivery_is_in_progress",
+  "status_label": "خرج للتوصيل",
+  "custom_status": {
+    "ar": "خرج للتوصيل",
+    "en": "Out for delivery"
+  }
+}
+```
+
+<Tip>
+  Prefer `status_label` over `custom_status` + manual fallback. The label is locale-aware (respects the request's `Accept-Language` header / `?lang=` parameter) and stays in sync with the resolution logic on our side.
+</Tip>

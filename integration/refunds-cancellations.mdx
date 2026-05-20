@@ -77,6 +77,42 @@ For an earning order, refunding reverses previously awarded points. In partial r
 
 There is also an internal system event called `auto_refunded`. This can occur when the backend automatically reverses a replacing order because an expected transaction record was missing during reconciliation. Integrators should treat it as a refund-class terminal state and handle it in webhook consumers.
 
+## Merchant-dashboard refunds (storefront orders)
+
+Merchants who sell their own physical / digital products **through the Points storefront** (not pure API integrators) can refund a `ProductOrder` from the dashboard. The button is on the Order details page (`Product Orders → show`) and is more than a gateway refund — it runs a **full-stack reversal** in a fixed order:
+
+| Step | What happens | Reversible? |
+| --- | --- | --- |
+| 1 | Gateway refund — Tabby, Tamara, or Moyasar (VISA / MADA / Apple Pay / MasterCard) is refunded for the captured amount | **No** — once accepted by the gateway, money is back with the buyer |
+| 2 | Linked `EARNING` order is fully refunded — points awarded to the buyer are withdrawn back, merchant's wallet is credited back | Yes (admin can re-issue) |
+| 3 | Linked `REPLACING` order is fully refunded — points the buyer redeemed are returned to their wallet, merchant's `settle` wallet entry is reversed | Yes |
+| 4 | `metadata.refund_status = 'refunded'` is stamped on the ProductOrder, the badge flips to **"Refunded"**, and the trigger button disappears | Yes |
+
+If step 1 fails (gateway rejects, captured amount mismatch, missing reference), the whole flow aborts — nothing else is touched. If steps 2-3 fail after step 1 succeeded, the metadata is still stamped (the money is already back with the buyer) and the failures land in the server log for manual reconciliation.
+
+### 3-day refund window
+
+The dashboard refund button **disappears 3 days after the order was created**. After that, the weekly settlement run (`MakeProductSettlements`, Thursday in Riyadh time) has already swept the order into the merchant's payout, so an automated reversal would race the settlement and leave the books out of sync.
+
+| Order age | Refund button | Notes |
+| --- | --- | --- |
+| < 72 hours | **Visible** | Standard flow above; runs end-to-end via `RefundProductOrderService` |
+| ≥ 72 hours | Hidden | Settlement has captured the order; refund needs to be coordinated with finance manually |
+
+Direct calls to the service (e.g. from admin tooling or a stale browser tab) are guarded by the same window — past 72 hours they return:
+
+```json
+{ "ok": false, "message": "The amount cannot be refunded after 3 days from the transaction date." }
+```
+
+### Settlement skips refunded orders
+
+Once `metadata.refund_status = 'refunded'` is stamped, the weekly product-settlement job excludes the order from the merchant's next payout — so the merchant is never paid for an order whose money already went back to the buyer.
+
+<Note>
+  This whole section is for the **merchant dashboard** flow. The public `POST /v1/orders/{uuid}/refund` endpoint (described above) is the API equivalent for loyalty `Order` reversals and is **not** subject to the 3-day window.
+</Note>
+
 ## Recommended merchant policy
 
 <AccordionGroup>

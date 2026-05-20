@@ -97,6 +97,21 @@ The response returns a `checkout_url` that you redirect the customer to. See [Ch
   The Public key does **not** grant read access to orders or any other merchant data. It only authorises creating checkout sessions for your merchant.
 </Note>
 
+## Active state vs. integration state
+
+Every key carries **two independent flags** — they answer different questions:
+
+| Flag | Question it answers | Set by |
+| --- | --- | --- |
+| `status` | Is this API key valid for HTTP auth? | The dashboard (you, or an admin disabling a leaked key). Driving the `ApiKeyAuth.active()` scope. |
+| `integration_active` | Has the merchant currently toggled the Points integration ON in their external platform? | External platforms via `POST /v1/integration/status` (Matajer's "ربط بوينتس" switch today). |
+
+Both must be `true` for the merchant dot on the admin `/merchants` listing to be **green**. The split keeps a leaked-key kill switch separate from the merchant's day-to-day on/off toggle — disabling a key for security reasons doesn't pretend the merchant opted out of the integration, and the merchant toggling off doesn't invalidate the key (so the next toggle-back-on works with the same key).
+
+<Note>
+  Pure API integrators (no Matajer / Salla connection) usually have `integration_active = true` from the moment the key is generated — it defaults to `true` and there's nothing to flip it. The flag matters for platforms that gate the integration behind their own UI switch.
+</Note>
+
 ## Rotating keys
 
 Rotate immediately if you suspect leakage (committed to git, shared in chat, old employee, etc.):
