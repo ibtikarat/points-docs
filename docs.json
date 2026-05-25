@@ -82,17 +82,12 @@
             "group": "Widgets",
             "pages": [
               "widgets/overview",
-              "widgets/product-widget",
-              "widgets/checkout-widget",
-              "widgets/customization",
-              "widgets/implementation-guidelines",
               "widgets/widget-playground"
             ]
           },
           {
             "group": "SDKs",
             "pages": [
-              "sdk/overview",
               "sdk/php-sdk"
             ]
           },
@@ -141,6 +136,11 @@
     { "source": "/integration/earn-product-rating", "destination": "/integration/earning-methods#product-rating" },
     { "source": "/integration/redeem-flow", "destination": "/integration/checkout-flow" },
     { "source": "/integration/order-statuses", "destination": "/integration/order-lifecycle" },
-    { "source": "/webhooks/handling", "destination": "/webhooks/overview#handling-webhooks" }
+    { "source": "/webhooks/handling", "destination": "/webhooks/overview#handling-webhooks" },
+    { "source": "/widgets/product-widget", "destination": "/widgets/overview#quick-start--product-page" },
+    { "source": "/widgets/checkout-widget", "destination": "/widgets/overview#quick-start--checkout" },
+    { "source": "/widgets/customization", "destination": "/widgets/overview#configuration" },
+    { "source": "/widgets/implementation-guidelines", "destination": "/widgets/overview#implementation-guidelines" },
+    { "source": "/sdk/overview", "destination": "/sdk/php-sdk" }
   ]
 }

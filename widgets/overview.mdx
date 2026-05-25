@@ -1,56 +1,234 @@
 ---
-title: 'Overview'
-description: 'Overview of Points promotional widgets'
+title: 'Widgets'
+description: 'Embed Points promotional messaging on product and checkout pages'
 ---
 
-Points currently exposes an embeddable widget loader that renders promotional messaging in isolated iframes. The current implementation is focused on lightweight storefront messaging for product and checkout surfaces.
+Points exposes a single embeddable widget loader that renders promotional messaging in isolated iframes. One loader, one initializer, one `type` parameter — used on product pages and checkout pages alike.
 
-## Available widgets
+This page covers everything you need to integrate: surfaces, initialization, configuration, do/don't guidance, and CSP.
 
-<CardGroup cols={2}>
-  <Card title="Product Page Widget" icon="tag" href="/widgets/product-widget">
-    Promotional message on the product page to show earned points.
-  </Card>
-  <Card title="Checkout Widget" icon="cart-shopping" href="/widgets/checkout-widget">
-    Promotional message shown during checkout or just before payment.
-  </Card>
-</CardGroup>
+## Available surfaces
 
-<Note>
-  This section is intentionally compact. The goal is to help merchants implement the widget quickly without spreading the setup over too many pages.
-</Note>
+| Surface | `type` value(s) | Where to place |
+| --- | --- | --- |
+| Product page — promo message | `points-alert`, `points-card` | Directly below the product price, close to the buy CTA |
+| Checkout — installments banner | `installments` | Above payment methods, before the final CTA |
 
-## Preview
-
-### Product page widget
+### Product page preview
 
 <img src="/images/widgets/product-widget-badge.png" alt="Product widget preview" style={{ width: '100%', maxWidth: '1180px' }} />
 
-### Checkout widget
+When `points-card` is clicked, it can open a richer parent-page modal:
+
+<img src="/images/widgets/checkout-widget.png" alt="Product widget modal" style={{ width: '100%', maxWidth: '600px' }} />
+
+### Checkout page preview
 
 <img src="/images/widgets/product-widget-popup.png" alt="Checkout widget preview" style={{ width: '100%', maxWidth: '1180px' }} />
 
-## Quick start
+## Script source
+
+Use the current loader on every surface:
 
 ```html
+<script src="https://business.papp.sa/widget-loader.js"></script>
+```
+
+## Quick start — product page
+
+```html
+<div id="points-product-widget"></div>
 <script src="https://business.papp.sa/widget-loader.js"></script>
 <script>
   PointsWidget.init({
     type: 'points-card',
     lang: 'ar',
     points: 250,
-    container: '#points-widget'
+    container: '#points-product-widget'
   });
 </script>
 ```
 
+## Quick start — checkout
+
+```html
+<div id="points-checkout-widget"></div>
+<script src="https://business.papp.sa/widget-loader.js"></script>
+<script>
+  PointsWidget.init({
+    type: 'installments',
+    lang: 'ar',
+    container: '#points-checkout-widget',
+    callbackUrl: 'https://merchant.example.com/checkout/return'
+  });
+</script>
+```
+
+## Configuration
+
+All surfaces share the same `init()` options. Only the `type` value differs.
+
+<ParamField body="type" type="string" required>
+  One of `points-alert`, `points-card` (product surfaces), or `installments` (checkout surface).
+</ParamField>
+
+<ParamField body="lang" type="string" default="ar">
+  `ar` for Arabic storefronts (default), `en` for English.
+</ParamField>
+
+<ParamField body="points" type="number" default="0">
+  Numeric points value rendered by the promo widgets (`points-alert` / `points-card`). Ignored by `installments`.
+</ParamField>
+
+<ParamField body="container" type="string | HTMLElement" required>
+  Target container selector or DOM element where the iframe wrapper will be mounted.
+</ParamField>
+
+<ParamField body="callbackUrl" type="string">
+  Used by the `installments` flow when continuing shopping outside mobile webviews.
+</ParamField>
+
+<ParamField body="widgetUrl" type="string">
+  Optional widget base URL. If omitted, the loader infers it from the script source.
+</ParamField>
+
+<ParamField body="parentOrigin" type="string">
+  Optional `postMessage` origin override. Auto-detected when omitted.
+</ParamField>
+
+### Variants explained
+
+<AccordionGroup>
+  <Accordion title="points-alert">
+    A compact inline message. In the current implementation it can be dismissed and does not open a modal.
+  </Accordion>
+  <Accordion title="points-card">
+    A richer promotional card that can open a parent-page popup with more detail.
+  </Accordion>
+  <Accordion title="installments">
+    Checkout-stage promotional banner. Honors `callbackUrl` for the "continue shopping" action on mobile webviews.
+  </Accordion>
+</AccordionGroup>
+
+## Auto-init from script attributes
+
+The loader also supports data-attribute initialization, useful when you cannot run inline JS:
+
+```html
+<div id="product-widget"></div>
+<script
+  src="https://business.papp.sa/widget-loader.js"
+  data-type="points-alert"
+  data-lang="ar"
+  data-points="300"
+  data-container="#product-widget">
+</script>
+```
+
+## Cleanup
+
+The loader exposes a `destroy()` method for SPAs re-rendering containers:
+
+```javascript
+PointsWidget.destroy();
+```
+
+This removes the wrapper and unregisters the postMessage listener.
+
+## Implementation guidelines
+
+### Product surfaces
+
+**Do:**
+
+- Place `points-alert` or `points-card` directly below the product price or close to the primary buy CTA.
+- Use `lang: 'ar'` on Arabic pages, `lang: 'en'` on English pages.
+- Leave enough vertical space for the preset iframe height.
+- Test click behavior for `points-card` so the parent modal is not blocked by other overlays.
+
+**Do not:**
+
+- Do not expect `points-alert` to open a modal — it's dismissible by design.
+- Do not initialize the widget before its container exists in the DOM.
+- Do not hard-code a container height lower than the widget's preset height.
+
+### Checkout surface
+
+**Do:**
+
+- Use `installments` for the current checkout-stage implementation.
+- Place it before payment or decision-critical content.
+- Verify `callbackUrl` behavior in your real checkout flow.
+
+**Do not:**
+
+- Do not ship unsupported callbacks (e.g. `onRedeem()`) — they don't exist in the current loader.
+- Do not assume widget behavior from generic BNPL docs; validate against the real loader.
+
+## Content Security Policy
+
+If your storefront uses CSP, allow the widget origin and iframe endpoints:
+
+```text
+script-src 'self' https://business.papp.sa;
+frame-src 'self' https://business.papp.sa;
+connect-src 'self' https://business.papp.sa;
+img-src 'self' data: https:;
+font-src 'self' data: https://business.papp.sa;
+style-src 'self' 'unsafe-inline' https://business.papp.sa;
+```
+
+The widget backend itself enforces security headers on `/widget/embed` and `/widget/modal`, including CSP, `X-Content-Type-Options`, `X-XSS-Protection`, and `Referrer-Policy`.
+
+## What is not currently supported
+
+To set expectations honestly — these are **not** part of today's loader:
+
+- theme switching API
+- size variants as public config
+- CSS variable API
+- a dedicated checkout redemption callback
+- separate widget SDK classes such as `PointsProductWidget` or `PointsCheckoutWidget`
+
+<Warning>
+  Keep your integration aligned with the loader behavior documented here. If the widget API expands later, those options will be added only after they exist in production.
+</Warning>
+
+## Current loader behavior worth testing
+
+- iframe renders with a skeleton loader first
+- height changes are driven by `postMessage` resize events
+- modal content opens in the parent page for `points-card`
+- `destroy()` removes the wrapper and unregisters the message listener
+- auto-init is supported through script `data-*` attributes
+
+## Pre-launch checks
+
+- Widget script loads from the intended environment
+- `type` matches the actual surface (`points-alert`, `points-card`, or `installments`)
+- Arabic pages render RTL correctly
+- Modal works on mobile and desktop
+- CSP does not block fonts, images, iframe, or script loading
+- Checkout-stage widget uses a valid `callbackUrl` when needed
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="points-alert disappears on click">
+    Expected behavior. The current implementation is intentionally dismissible and does not open a modal.
+  </Accordion>
+  <Accordion title="Modal does not open for points-card">
+    Confirm your page allows the parent modal to render and that `/widget/modal` is reachable from the widget origin.
+  </Accordion>
+  <Accordion title="Widget never renders">
+    Check that the container exists at init time and that no CSP rule is blocking the script or iframe origin.
+  </Accordion>
+</AccordionGroup>
+
 ## Next
 
-<CardGroup cols={2}>
-  <Card title="Product Page Widget" icon="tag" href="/widgets/product-widget">
-    Product page implementation.
-  </Card>
-  <Card title="Checkout Widget" icon="cart-shopping" href="/widgets/checkout-widget">
-    Checkout placement and usage.
+<CardGroup cols={1}>
+  <Card title="Widget Playground" icon="play" href="/widgets/widget-playground">
+    Live, editable preview to try the loader before integrating.
   </Card>
 </CardGroup>
