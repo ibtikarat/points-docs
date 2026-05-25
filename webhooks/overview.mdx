@@ -1,6 +1,6 @@
 ---
 title: 'Webhooks Overview'
-description: 'Real-time order notifications pushed from Points to your backend'
+description: 'Real-time order notifications — how they fire, how to verify them, how to handle them safely'
 ---
 
 Webhooks are how Points tells **your backend** that something happened — an order was approved, a refund was issued, a shipping status changed. You register one or more HTTPS endpoints; Points posts JSON to them whenever an event fires.
@@ -93,7 +93,7 @@ Response:
 ```
 
 <Warning>
-  Store the `secret` securely — it is how you verify webhook authenticity. See [Webhook handling](/webhooks/handling).
+  Store the `secret` securely — it is how you verify webhook authenticity (see below).
 </Warning>
 
 See [Webhook management](/webhooks/management) for listing, updating, and deleting webhooks.
@@ -108,13 +108,92 @@ You can register more than one webhook per merchant. Common reasons:
 
 Every registered webhook receives **every** event for your merchant. Filtering is your responsibility.
 
-## Idempotency is non-negotiable
+---
 
-Points may deliver the same `(order.id, event)` pair more than once — retry loops, backend replays, network blips. Design your handler so repeat deliveries are safe:
+## Handling webhooks
+
+The recommended consumer pattern boils down to four rules:
+
+1. verify `X-Webhook-Secret`
+2. acknowledge quickly with `2xx`
+3. enqueue work instead of processing inline
+4. deduplicate on `(order.id, event)`
+
+### Recommended handling sequence
+
+```mermaid
+flowchart TD
+    A[Incoming webhook] --> B[Read X-Webhook-Secret]
+    B --> C{Secret valid?}
+    C -- No --> D[Return 401 or 403]
+    C -- Yes --> E{Already processed?}
+    E -- Yes --> F[Return 200]
+    E -- No --> G[Persist receipt or enqueue job]
+    G --> H[Return 200 quickly]
+    H --> I[Worker updates business state]
+```
+
+### Verifying the secret
+
+Use a constant-time comparison so you don't leak timing information.
+
+<CodeGroup>
+```javascript Node.js
+import crypto from "node:crypto";
+
+function verifySecret(received, expected) {
+  const a = Buffer.from(received || "", "utf8");
+  const b = Buffer.from(expected || "", "utf8");
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+```
+
+```php PHP
+if (!hash_equals($expectedSecret, (string) request()->header('X-Webhook-Secret'))) {
+    abort(401);
+}
+```
+
+```python Python
+import hmac
+
+if not hmac.compare_digest(received_secret or "", expected_secret or ""):
+    raise PermissionError("Invalid webhook secret")
+```
+</CodeGroup>
+
+### Fast-ack pattern
+
+Your endpoint **must** respond 2xx within the 10-second timeout budget. Anything slower triggers a retry, which leads to duplicates. Do this:
+
+```javascript
+app.post("/webhooks/points", async (req, res) => {
+  if (!verifySecret(req.header("X-Webhook-Secret"), process.env.POINTS_WEBHOOK_SECRET)) {
+    return res.status(401).end();
+  }
+
+  await queue.publish("points.webhook", req.body); // enqueue
+  return res.status(200).end();                    // ack immediately
+});
+```
+
+Do **not**:
+
+- call slow third-party services before responding
+- send email synchronously
+- update ERP/WMS inline if it can block the response
+
+Your worker pulls from the queue and does the real work (update DB, send email, notify WMS). If the worker fails, it can retry locally without Points re-delivering.
+
+### Idempotency strategy
+
+Points may deliver the same `(order.id, event)` pair more than once — retry loops, backend replays, network blips. Design your handler so repeat deliveries are safe.
+
+Recommended database uniqueness rule:
 
 ```sql
--- Example: reject duplicate events at the DB level
-create unique index webhook_event_dedupe
+create unique index points_webhook_event_dedupe
   on webhook_events (points_order_uuid, event);
 ```
 
@@ -127,19 +206,24 @@ const existed = await db.webhookEvents.findOne({
 if (existed) return res.status(200).end(); // ack, already processed
 ```
 
-## Return fast, process later
+If a duplicate arrives, return `200` and do nothing.
 
-Your endpoint **must** respond 2xx within the 10-second timeout budget. Anything slower triggers a retry, which leads to duplicates. The standard pattern:
+### Status codes
 
-```javascript
-app.post("/webhooks/points", async (req, res) => {
-  if (!verifySecret(req)) return res.status(401).end();
-  await queue.publish("points.webhook", req.body); // enqueue
-  res.status(200).end();                            // ack immediately
-});
-```
+| Your response | Meaning |
+| --- | --- |
+| `200` / `204` | Accepted |
+| `401` / `403` | Secret invalid |
+| `5xx` | Temporary processing failure; may trigger retry |
 
-Your worker pulls from the queue and does the real work (update DB, send email, notify WMS). If the worker fails, it can retry locally without Points re-delivering.
+### Retry expectations
+
+Current backend behavior:
+
+- each outbound request uses a `10` second timeout
+- the job retries up to `3` times on failure
+
+Your side should therefore assume duplicates are normal.
 
 ## Local development
 
@@ -151,14 +235,27 @@ Webhooks need a publicly reachable HTTPS URL. In local dev, tunnel your laptop t
 
 Register the tunnel URL as a webhook in the sandbox environment and trigger test events by calling the API against a sandbox order.
 
+## Operational tips
+
+<AccordionGroup>
+  <Accordion title="Log verification failures separately">
+    A sudden wave of secret mismatches often means the secret was rotated on one side only, or the endpoint was copied incorrectly.
+  </Accordion>
+  <Accordion title="Persist raw payload for audit">
+    Store the raw JSON and headers for a limited retention period in staging/production so support can reconcile difficult cases.
+  </Accordion>
+  <Accordion title="Use one secret per environment">
+    Never reuse production webhook secrets in staging or local development.
+  </Accordion>
+</AccordionGroup>
+
+See [Security](/authentication/security#webhook-security) for broader hardening guidance.
+
 ## Next
 
 <CardGroup cols={2}>
   <Card title="Webhook events" icon="list" href="/webhooks/events">
     Per-event payload schemas and sample bodies.
-  </Card>
-  <Card title="Webhook handling" icon="shield-check" href="/webhooks/handling">
-    Verify signatures, acknowledge correctly, handle retries.
   </Card>
   <Card title="Webhook management" icon="gear" href="/webhooks/management">
     CRUD operations via API or dashboard.

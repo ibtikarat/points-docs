@@ -66,12 +66,7 @@
             "pages": [
               "integration/checkout-flow",
               "integration/earning-methods",
-              "integration/earn-only",
-              "integration/earn-store-rating",
-              "integration/earn-product-rating",
-              "integration/redeem-flow",
               "integration/order-lifecycle",
-              "integration/order-statuses",
               "integration/refunds-cancellations"
             ]
           },
@@ -80,8 +75,7 @@
             "pages": [
               "webhooks/overview",
               "webhooks/events",
-              "webhooks/management",
-              "webhooks/handling"
+              "webhooks/management"
             ]
           },
           {
@@ -140,5 +134,13 @@
       "instagram": "https://instagram.com/pointsappsa",
       "linkedin": "https://linkedin.com/company/pointsappsa"
     }
-  }
+  },
+  "redirects": [
+    { "source": "/integration/earn-only", "destination": "/integration/earning-methods#order-purchase" },
+    { "source": "/integration/earn-store-rating", "destination": "/integration/earning-methods#store-rating" },
+    { "source": "/integration/earn-product-rating", "destination": "/integration/earning-methods#product-rating" },
+    { "source": "/integration/redeem-flow", "destination": "/integration/checkout-flow" },
+    { "source": "/integration/order-statuses", "destination": "/integration/order-lifecycle" },
+    { "source": "/webhooks/handling", "destination": "/webhooks/overview#handling-webhooks" }
+  ]
 }

@@ -5,7 +5,28 @@ description: 'End-to-end redeem + earn checkout integration'
 
 The Checkout flow lets your customers **redeem Points** during your checkout for a direct discount on the order, and **earn Points** on whatever portion they pay in cash. It is the full Points experience — the right choice when you want customers to feel they can spend the balance they've built up across the network.
 
-If you only need to award points on completed purchases, see the simpler [Earn-only](/integration/earn-only) flow.
+If you only need to award points after events on your side (purchase, store rating, product rating) without redirecting the customer, see [Earning methods](/integration/earning-methods) instead.
+
+## What "redeem" means in Points
+
+In a redeem-during-checkout flow:
+
+1. your backend creates a checkout session
+2. the customer is redirected to the Points-hosted checkout
+3. the customer sees their eligible balance
+4. they apply some or all of the balance
+5. they pay any remaining amount
+6. Points notifies your backend by webhook
+
+### Responsibilities
+
+| Your side | Points side |
+| --- | --- |
+| Creating the checkout session with the correct `total_price` | Identifying the customer |
+| Passing a stable `order_number` | Showing the redeemable balance |
+| Storing your own cart/order context in `metadata` | Applying redemption inside the hosted checkout |
+| Handling the browser return via `callback_url` | Finishing the payment flow and order settlement |
+| Treating the webhook as the source of truth |  |
 
 ## High-level picture
 
@@ -77,14 +98,25 @@ curl -X POST https://business.papp.sa/api/v1/orders/checkout/YOUR_PUBLIC_KEY \
 }
 ```
 
+### Customer identity behavior
+
+The checkout endpoint accepts `phone_number`. Current runtime behavior is:
+
+- if the phone belongs to a known Points customer, the checkout continues to verification
+- if the phone is not found, the response still returns a `checkout_url`, but the customer lands on an onboarding / phone-change path before completing checkout
+
+That means your frontend should never make assumptions from the phone lookup alone. Always redirect the user to the returned `checkout_url`.
+
 ## Step 2 — Redirect the customer
 
-Redirect the customer's browser to `checkout_url`. They will:
+Redirect the customer's browser to `checkout_url`. Inside Points checkout, the customer can:
 
 1. Confirm their phone number (one-time OTP if not yet verified).
 2. See their redeemable Points balance.
 3. Choose how many points to apply as discount.
 4. Pay the remaining amount via your configured PSP.
+
+The exact UX may evolve, but your backend integration contract does not change: create checkout, redirect, listen to webhook, reconcile the order state.
 
 ## Step 3 — Receive the webhook
 
@@ -125,6 +157,14 @@ See [Webhook events](/webhooks/events) for full payload schemas.
 ## Step 4 — Handle the browser redirect
 
 Points redirects the customer's browser to the `callback_url` you supplied. The URL is appended with query parameters identifying the order so your frontend can show the right confirmation page.
+
+The `callback_url` is for **user experience only**. Use it to show:
+
+- order confirmation
+- pending state
+- payment failure / retry page
+
+Do not use the browser redirect as proof of payment. The authoritative signal is the webhook plus, if needed, `GET /v1/orders/{uuid}`.
 
 Your callback handler should:
 
