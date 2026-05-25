@@ -65,7 +65,10 @@
             "group": "Integration Guide",
             "pages": [
               "integration/checkout-flow",
+              "integration/earning-methods",
               "integration/earn-only",
+              "integration/earn-store-rating",
+              "integration/earn-product-rating",
               "integration/redeem-flow",
               "integration/order-lifecycle",
               "integration/order-statuses",

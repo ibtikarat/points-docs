@@ -1,0 +1,63 @@
+---
+title: 'Earning Methods'
+description: 'Three ways customers can earn points on your platform'
+---
+
+Points supports **three independent earning channels**. You can integrate one, two, or all three — each channel is opt-in and shares the same API key, lock, and pending-customer handling.
+
+| Channel | Trigger | API endpoint | Page |
+| --- | --- | --- | --- |
+| Order purchase | Customer completes a purchase | `POST /v1/orders/earning` | [Earn on orders](/integration/earn-only) |
+| Store rating | Customer rates your store | `POST /v1/orders/earning/store-rating` | [Earn on store rating](/integration/earn-store-rating) |
+| Product rating | Customer rates a product | `POST /v1/orders/earning/product-rating` | [Earn on product rating](/integration/earn-product-rating) |
+
+## How earning amounts are decided
+
+The **merchant controls the points amount**, not the API caller. Each channel reads its configured rate from the merchant's Points dashboard:
+
+- **Order purchase** — points scale with `total_price` and a per-merchant multiplier. Specific products can be assigned a custom point value that overrides the default.
+- **Store rating** — flat amount per accepted store rating.
+- **Product rating** — flat amount per accepted product rating.
+
+This means your integration code never decides how many points are awarded. You only tell Points *what happened*, and Points applies the merchant's current configuration.
+
+<Note>
+A channel must be **enabled and funded** in the merchant's dashboard before its endpoint will award points. If the channel is disabled, the API returns `403`.
+</Note>
+
+## Choosing what to integrate
+
+Pick channels based on what events your platform actually emits.
+
+<CardGroup cols={3}>
+  <Card title="Order purchase" icon="cart-shopping" href="/integration/earn-only">
+    Award points after a confirmed payment. Use this if you only have a checkout system.
+  </Card>
+  <Card title="Store rating" icon="star" href="/integration/earn-store-rating">
+    Award points when a customer rates your overall store experience.
+  </Card>
+  <Card title="Product rating" icon="comment-dots" href="/integration/earn-product-rating">
+    Award points when a customer rates a specific product they bought.
+  </Card>
+</CardGroup>
+
+## Shared behavior across all channels
+
+All three earning endpoints share these guarantees so your integration logic stays uniform:
+
+- **Authentication.** Same `x-api-key` header.
+- **Concurrency.** Each merchant is serialized through a distributed lock. Send earning calls sequentially per merchant; retry `429` with a short back-off.
+- **Idempotency.** Each request carries a merchant-side unique reference (`order_number` for purchases, `review_reference` for ratings). Reuse the same reference on retries.
+- **Pending customers.** If the customer's Points account is not yet activated, the response returns a `pending_client_activation` payload instead of an approved order. The earning is queued and finalized when the customer activates.
+- **Response shape.** Same `data.uuid`, `data.reference_number`, `data.order_status`, and `data.total_points` fields. Store the `uuid` in your system for later lookups, refunds, and reconciliation.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Quick start" icon="rocket" href="/introduction/quickstart">
+    Make your first earning call end-to-end.
+  </Card>
+  <Card title="Go-live checklist" icon="check-double" href="/testing/go-live-checklist">
+    Verify production readiness before launch.
+  </Card>
+</CardGroup>

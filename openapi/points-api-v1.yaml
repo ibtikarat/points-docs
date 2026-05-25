@@ -125,6 +125,92 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /v1/orders/earning/store-rating:
+    post:
+      tags:
+        - Orders
+      summary: Create a store-rating earning order
+      description: >
+        Awards points to a customer for submitting a rating of the merchant's
+        store. The points amount is configured by the merchant in the Points
+        dashboard — the request body does not carry the points value. The
+        request is serialized inside a distributed lock scoped to the
+        authenticated merchant, and `review_reference` is used as the
+        merchant-side idempotency key.
+      operationId: createStoreRatingEarningOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreRatingEarningRequest'
+      responses:
+        '200':
+          description: >
+            Points awarded successfully. When the customer's account is not yet
+            activated, a `pending_client_activation` payload is returned
+            instead of a full order resource.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/OrderResponse'
+                  - $ref: '#/components/schemas/PendingEarningResponse'
+        '400':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          description: Too many concurrent requests for the same merchant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/orders/earning/product-rating:
+    post:
+      tags:
+        - Orders
+      summary: Create a product-rating earning order
+      description: >
+        Awards points to a customer for submitting a rating of a specific
+        product. The points amount is configured by the merchant in the Points
+        dashboard — the request body does not carry the points value. The
+        request is serialized inside a distributed lock scoped to the
+        authenticated merchant, and `review_reference` is used as the
+        merchant-side idempotency key.
+      operationId: createProductRatingEarningOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRatingEarningRequest'
+      responses:
+        '200':
+          description: >
+            Points awarded successfully. When the customer's account is not yet
+            activated, a `pending_client_activation` payload is returned
+            instead of a full order resource.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/OrderResponse'
+                  - $ref: '#/components/schemas/PendingEarningResponse'
+        '400':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          description: Too many concurrent requests for the same merchant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /v1/orders/{orderUuid}/complete:
     post:
       tags:
@@ -773,6 +859,101 @@ components:
           nullable: true
           additionalProperties: true
           description: Optional metadata stored on the order.
+    StoreRatingEarningRequest:
+      type: object
+      required:
+        - phone_number
+        - review_reference
+      properties:
+        phone_number:
+          type: string
+          description: >
+            Customer phone number. Accepted formats: `+966XXXXXXXXX`,
+            `00966XXXXXXXXX`, `966XXXXXXXXX`, `0XXXXXXXXX`, or bare
+            `5XXXXXXXX`. Normalised server-side to `5\d{8}`.
+          example: "512345678"
+        review_reference:
+          type: string
+          description: >
+            Merchant-side unique identifier for this rating. Used as the
+            idempotency key — sending the same value twice for the same
+            merchant is rejected as a duplicate.
+          example: STORE-REVIEW-2026-0001
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+          description: >
+            Star value submitted by the customer. Stored for audit only; does
+            not change the points awarded.
+          example: 5
+        comment:
+          type: string
+          nullable: true
+          description: Free-text review body. Stored for audit only.
+          example: Great experience, fast delivery.
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Optional metadata stored on the earning order.
+          example:
+            channel: web
+            branch_code: RUH-01
+    ProductRatingEarningRequest:
+      type: object
+      required:
+        - phone_number
+        - review_reference
+        - product_id
+      properties:
+        phone_number:
+          type: string
+          description: >
+            Customer phone number. Accepted formats: `+966XXXXXXXXX`,
+            `00966XXXXXXXXX`, `966XXXXXXXXX`, `0XXXXXXXXX`, or bare
+            `5XXXXXXXX`. Normalised server-side to `5\d{8}`.
+          example: "512345678"
+        review_reference:
+          type: string
+          description: >
+            Merchant-side unique identifier for this rating. Used as the
+            idempotency key — sending the same value twice for the same
+            merchant is rejected as a duplicate.
+          example: PRODUCT-REVIEW-2026-0001
+        product_id:
+          type: string
+          description: >
+            Merchant-side product identifier (SKU or internal ID) that the
+            rating belongs to.
+          example: SKU-CAPPUCCINO-250G
+        product_name:
+          type: string
+          nullable: true
+          description: Human-readable product name. Stored for audit.
+          example: Cappuccino 250g
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+          description: >
+            Star value submitted by the customer. Stored for audit only; does
+            not change the points awarded.
+          example: 4
+        comment:
+          type: string
+          nullable: true
+          description: Free-text review body. Stored for audit only.
+          example: Good aroma, smooth taste.
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Optional metadata stored on the earning order.
+          example:
+            channel: mobile_app
     CompleteOrderRequest:
       type: object
       description: >
